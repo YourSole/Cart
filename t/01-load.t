@@ -1,4 +1,5 @@
 #!perl
+
 use Test::More;
 
 BEGIN {
