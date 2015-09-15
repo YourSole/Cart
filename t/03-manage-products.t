@@ -10,6 +10,8 @@ use HTTP::Request::Common;
 use File::Temp qw(tempfile);
 use DBI;
 use File::Spec;
+use HTTP::Cookies;
+
 use lib File::Spec->catdir( 't', 'lib' );
 
 use TestApp;
@@ -26,6 +28,7 @@ t::lib::TestApp::set plugins => {
     DBIC => {
         foo => {
             dsn =>  "dbi:SQLite:dbname=$dbfile",
+            schema_class => "Test::Schema"
         }
     }
 };
@@ -55,7 +58,8 @@ my @sql = (
   'quantity'  INTEGER NOT NULL
 );",
 
-"INSERT INTO PRODUCT values (1,'SU03','Product1','10.00','description of the product')",
+"INSERT INTO PRODUCT values (1,'SU03','Product1','10.00','description of the product1')",
+"INSERT INTO PRODUCT values (2,'SU04','Product2','10.00','description of the product2')",
 
 );
 
@@ -65,23 +69,39 @@ my $app = Dancer2->runner->psgi_app;
 is( ref $app, 'CODE', 'Got app' );
 
 my $test = Plack::Test->create($app);
+use Data::Dumper;
+
+my $jar = HTTP::Cookies->new;
+my $site = "http://localhost";
 
 subtest 'adding un existing product' => sub {
-    my $res = $test->request( GET '/cart/add_product/SU00');
-    like(
-        $res->content,qr/Product doesn't exists/,'Get content for /cart/add_product/SU03'
-    );
+  my $req = GET $site . '/cart/add_product/SU00'; 
+  my $res = $test->request( $req );
+  like(
+      $res->content, qr/Product doesn't exists/,'Get content for /cart/add_product/SU03'
+  );
+  $jar->extract_cookies($res);
 };
 
 
 subtest 'adding existing product' => sub {
-    my $res = $test->request( GET '/cart/add_product/SU03');
-    like(
-        $res->content,qr/SU03/,'Get content for /cart/add_product/SU03'
-    );
+  my $req = GET $site . '/cart/add_product/SU03';
+  $jar->add_cookie_header($req);
+  my $res = $test->request( $req );
+  like(
+      $res->content, qr/SU03/,'Get content for /cart/add_product/SU03'
+  );
 };
 
+subtest 'getting products' => sub {
+  my $req = GET $site . '/cart/products/';
+   $jar->add_cookie_header($req);
+  my $res = $test->request( $req );
+  like(
+    $res->content,qr/Product1/, 'Get an array of products with their info' 
+  );
+};
 
-unlink $dbfile;
+#unlink $dbfile;
 
 done_testing;

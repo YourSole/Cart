@@ -6,6 +6,8 @@ use Dancer2::Plugin;
   
 register 'cart' => \&_cart;
 register 'cart_add' => \&_cart_add;
+register 'products' => \&_products;
+
 sub _cart {
   my ($dsl, $name) = @_;
   my $cart_info = {
@@ -23,6 +25,22 @@ sub _cart_add {
   my $cart_product = cart_add_product($dsl, $product_info);
   return $cart_product if $cart_product->{error};
   return $product_info;
+};
+
+sub _products {
+  my ($dsl) = @_;
+  my $arr = [];
+  my $cart_products = $dsl->schema->resultset('CartProduct')->search( 
+    { 
+      cart_id => _cart($dsl)->{id}, 
+    },
+  );
+  use Data::Dumper;
+  while( my $cp = $cart_products->next ){
+    my $product =  $dsl->schema->resultset('Product')->find({ id => $cp->product_id });
+    push @{$arr}, {$product->get_columns};
+  }
+  $arr;
 };
 
 sub get_product_info {
