@@ -74,7 +74,6 @@ my $app = Dancer2->runner->psgi_app;
 is( ref $app, 'CODE', 'Got app' );
 
 my $test = Plack::Test->create($app);
-use Data::Dumper;
 
 my $jar = HTTP::Cookies->new;
 my $site = "http://localhost";

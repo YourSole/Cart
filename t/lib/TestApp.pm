@@ -3,7 +3,6 @@ package t::lib::TestApp;
 use Dancer2;
 use Dancer2::Plugin::DBIC qw(schema resultset);
 use Dancer2::Plugin::ECommerce;
-use Data::Dumper;
 get '/' => sub {
   'Hello World'
 };

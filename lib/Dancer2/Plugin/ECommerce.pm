@@ -3,7 +3,6 @@ our $VERSION = '0.0001';  #Version
 use strict;
 use warnings;
 use Dancer2::Plugin;
-use Data::Dumper;
  
 my $cart_result_name = undef;
 my $cart_product_result_name = undef; 
