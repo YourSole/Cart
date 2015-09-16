@@ -14,14 +14,13 @@ get '/cart/new/:cart_new?' => sub {
   $cart->{'name'};
 };
 
-get '/cart/add_product/:product' => sub {
-  my $product = param ('product');
-  session 'test' => 'test2';
+post '/cart/add_product' => sub {
+  my $product = param ('sku');
   my $res = cart_add($product);
   $res->{error} ? $res->{error} : $res->{sku};
 };
 
-get '/cart/products/' => sub {
+get '/cart/products' => sub {
   Dumper(products);
 };
 

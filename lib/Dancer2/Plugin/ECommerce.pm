@@ -3,6 +3,7 @@ our $VERSION = '0.0001';  #Version
 use strict;
 use warnings;
 use Dancer2::Plugin;
+use Data::Dumper;
  
 my $cart_result_name = undef;
 my $cart_product_result_name = undef; 
@@ -48,7 +49,7 @@ sub _products {
     },
   );
   while( my $cp = $cart_products->next ){
-    my $product =  $dsl->schema->resultset($product_result_name)->find({ id => $cp->product_id });
+    my $product =  $dsl->schema->resultset($product_result_name)->find({ sku => $cp->sku });
     push @{$arr}, {$product->get_columns};
   }
 
@@ -57,7 +58,7 @@ sub _products {
 
 sub get_product_info {
   my ( $dsl, $product ) = @_;
-  my $product_info = $dsl->schema->resultset($product_result_name)->find( $product );
+  my $product_info = $dsl->schema->resultset($product_result_name)->find({ sku => $product });
   return $product_info ? { $product_info->get_columns } : { error => "Product doesn't exists."};
 };
 
@@ -65,7 +66,7 @@ sub cart_add_product {
   my ( $dsl, $product_info ) = @_;
   my $cart_product = $dsl->schema->resultset($cart_product_result_name)->create({
     cart_id =>  _cart($dsl)->{id},
-    product_id => $product_info->{id},
+    sku => $product_info->{sku},
     price => $product_info->{price},
     quantity => 1,
   });

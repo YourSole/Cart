@@ -48,8 +48,8 @@ __PACKAGE__->table("cart_products");
 __PACKAGE__->add_columns(
   "cart_id",
   { data_type => "integer", is_nullable => 0 },
-  "product_id",
-  { data_type => "integer", is_nullable => 0 },
+  "sku",
+  { data_type => "text", is_nullable => 0 },
   "price",
   { data_type => "numeric", is_nullable => 0 },
   "quantity",

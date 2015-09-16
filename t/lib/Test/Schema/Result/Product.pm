@@ -23,11 +23,6 @@ __PACKAGE__->table("product");
 
 =head1 ACCESSORS
 
-=head2 id
-
-  data_type: 'integer'
-  is_nullable: 1
-
 =head2 sku
 
   data_type: 'text'
@@ -51,8 +46,6 @@ __PACKAGE__->table("product");
 =cut
 
 __PACKAGE__->add_columns(
-  "id",
-  { data_type => "integer", is_nullable => 1 },
   "sku",
   { data_type => "text", is_nullable => 0 },
   "name",
