@@ -11,6 +11,8 @@ my $product_name = undef;
 register 'cart' => \&_cart;
 register 'cart_add' => \&_cart_add;
 register 'products' => \&_products;
+register 'clear_cart' => \&_clear_cart;
+
 register_hook 'before_get_product_info';
 
 sub _check_result_names {
@@ -84,6 +86,19 @@ sub cart_add_product {
   }
   return $cart_product ? { $cart_product->get_columns } : { error => "Error trying to create CartProduct."};
 };
+
+sub _clear_cart {
+  my ($dsl) = @_;
+  #get cart_id
+  my $cart_id = _cart($dsl)->{id}; 
+
+  #delete the cart_product info
+  $dsl->schema->resultset($cart_product_name)->search({ cart_id => $cart_id })->delete_all;
+
+  $dsl->schema->resultset($cart_name)->find($cart_id)->delete;
+
+  #delete the cart
+}
 
 register_plugin;
 1;

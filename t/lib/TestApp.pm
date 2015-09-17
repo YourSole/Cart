@@ -25,4 +25,9 @@ get '/cart/products' => sub {
   Dumper(products);
 };
 
+get '/cart/clear_cart' => sub {
+  clear_cart;
+  Dumper(products);
+};
+
 1;
