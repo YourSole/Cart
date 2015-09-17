@@ -28,9 +28,9 @@ __PACKAGE__->table("cart_products");
   data_type: 'integer'
   is_nullable: 0
 
-=head2 product_id
+=head2 sku 
 
-  data_type: 'integer'
+  data_type: 'text'
   is_nullable: 0
 
 =head2 price
@@ -62,4 +62,6 @@ __PACKAGE__->add_columns(
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+
+__PACKAGE__->set_primary_key( qw/ cart_id sku / );
 1;

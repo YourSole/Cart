@@ -83,8 +83,8 @@ my $res = $test->request( $req );
 $jar->extract_cookies($res);
 
 subtest 'adding unexisting product' => sub {
-  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU00" ]; 
-  $jar->add_cookie_header($req);
+  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU00", 'quantity' => '1' ]; 
+  $jar->add_cookie_header( $req );
   $res = $test->request( $req );
   like(
       $res->content, qr/Product doesn't exists/,'Get content for /cart/add_product/SU03'
@@ -92,20 +92,38 @@ subtest 'adding unexisting product' => sub {
 };
 
 subtest 'adding existing product' => sub {
-  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU03" ];
-  $jar->add_cookie_header($req);
+  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU03", 'quantity' => '1' ];
+  $jar->add_cookie_header( $req );
   $res = $test->request( $req );
   like(
       $res->content, qr/SU03/,'Get content for /cart/add_product/SU03'
   );
 };
 
-subtest 'getting products' => sub {
-  my $req = GET $site . '/cart/products';
+subtest 'adding existing product on cart' => sub {
+  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU03", 'quantity' => '7' ];
   $jar->add_cookie_header($req);
   $res = $test->request( $req );
   like(
-    $res->content,qr/Product1/, 'Get an array of products with their info' 
+      $res->content, qr/'quantity'\s=>\s8/,'Get content for /cart/add_product/SU03'
+  );
+};
+
+subtest 'getting products' => sub {
+
+  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU04", 'quantity' => '1' ];
+  $jar->add_cookie_header( $req );
+  $test->request( $req );
+
+  $req = GET $site . '/cart/products';
+  $jar->add_cookie_header( $req );
+  $res = $test->request( $req );
+  like(
+    $res->content,qr/Product1/, 'Get an array of products with their info - check Product 1' 
+  );
+
+  like(
+    $res->content,qr/Product2/, 'Get an array of products with their info - check Product 2' 
   );
 };
 
