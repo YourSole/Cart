@@ -14,7 +14,7 @@ register 'products' => \&_products;
 register_hook 'before_get_product_info';
 
 sub _check_result_names {
-  $cart_name = plugin_setting->{cart_result_name} ? plugin_setting->{cart_result_name}: 'Cart' unless $cart_name;
+  $cart_name = plugin_setting->{cart_name} ? plugin_setting->{cart_name}: 'Cart' unless $cart_name;
   $cart_product_name = plugin_setting->{cart_product_name}? plugin_setting->{cart_product_name}: 'CartProduct' unless $cart_product_name;
   $product_name = plugin_setting->{product_name} ? plugin_setting->{product_name} : 'Product' unless $product_name;
 }
