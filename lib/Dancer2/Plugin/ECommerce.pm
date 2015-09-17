@@ -4,9 +4,9 @@ use strict;
 use warnings;
 use Dancer2::Plugin;
  
-my $cart_result_name = undef;
-my $cart_product_result_name = undef; 
-my $product_result_name = undef;
+my $cart_name = undef;
+my $cart_product_name = undef; 
+my $product_name = undef;
  
 register 'cart' => \&_cart;
 register 'cart_add' => \&_cart_add;
@@ -14,9 +14,9 @@ register 'products' => \&_products;
 register_hook 'before_get_product_info';
 
 sub _check_result_names {
-  $cart_result_name = plugin_setting->{cart_result_name} ? plugin_setting->{cart_result_name}: 'Cart' unless $cart_result_name;
-  $cart_product_result_name = plugin_setting->{cart_product_result_name}? plugin_setting->{cart_product_result_name}: 'CartProduct' unless $cart_product_result_name;
-  $product_result_name = plugin_setting->{product_result_name} ? plugin_setting->{product_result_name} : 'Product' unless $product_result_name;
+  $cart_name = plugin_setting->{cart_result_name} ? plugin_setting->{cart_result_name}: 'Cart' unless $cart_name;
+  $cart_product_name = plugin_setting->{cart_product_name}? plugin_setting->{cart_product_name}: 'CartProduct' unless $cart_product_name;
+  $product_name = plugin_setting->{product_name} ? plugin_setting->{product_name} : 'Product' unless $product_name;
 }
 
 sub _cart {
@@ -26,7 +26,7 @@ sub _cart {
     session => $dsl->session->{'id'}
   };
   $cart_info->{name} = $name ? $name : 'main';
-  my $cart = $dsl->schema->resultset($cart_result_name)->find_or_create($cart_info);
+  my $cart = $dsl->schema->resultset($cart_name)->find_or_create($cart_info);
   return {$cart->get_columns};
 };
 
@@ -43,13 +43,13 @@ sub _cart_add {
 sub _products {
   my ($dsl) = @_;
   my $arr = [];
-  my $cart_products = $dsl->schema->resultset($cart_product_result_name)->search( 
+  my $cart_products = $dsl->schema->resultset($cart_product_name)->search( 
     { 
       cart_id => _cart($dsl)->{id}, 
     },
   );
   while( my $cp = $cart_products->next ){
-    my $product =  $dsl->schema->resultset($product_result_name)->find({ sku => $cp->sku });
+    my $product =  $dsl->schema->resultset($product_name)->find({ sku => $cp->sku });
     push @{$arr}, {$product->get_columns};
   }
 
@@ -58,14 +58,14 @@ sub _products {
 
 sub get_product_info {
   my ( $dsl, $product ) = @_;
-  my $product_info = $dsl->schema->resultset($product_result_name)->find({ sku => $product->{sku} });
+  my $product_info = $dsl->schema->resultset($product_name)->find({ sku => $product->{sku} });
   return $product_info ? { $product_info->get_columns } : { error => "Product doesn't exists."};
 };
 
 sub cart_add_product {
   my ( $dsl, $product_info, $quantity ) = @_;
   #check if the product exists other whise create a new one
-  my $cart_product = $dsl->schema->resultset($cart_product_result_name)->find({
+  my $cart_product = $dsl->schema->resultset($cart_product_name)->find({
     cart_id =>  _cart($dsl)->{id},
     sku => $product_info->{sku},
   });
@@ -75,7 +75,7 @@ sub cart_add_product {
     });
   } 
   else{
-     $cart_product = $dsl->schema->resultset($cart_product_result_name)->create({
+     $cart_product = $dsl->schema->resultset($cart_product_name)->create({
       cart_id =>  _cart($dsl)->{id},
       sku => $product_info->{sku},
       price => $product_info->{price},
