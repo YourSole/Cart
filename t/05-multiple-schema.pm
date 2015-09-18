@@ -23,6 +23,7 @@ if ($@) {
 }
 
 my (undef, $dbfile) = tempfile(SUFFIX => '.db');
+my (undef, $dbfile2) = tempfile(SUFFIX => '.db');
 
 t::lib::TestApp::set plugins => {
     ECommerce => {
@@ -31,14 +32,23 @@ t::lib::TestApp::set plugins => {
       product_name => 'Product',
     },
     DBIC => {
+        default => {
+            dsn =>  "dbi:SQLite:dbname=$dbfile",
+            schema_class => "Test::Schema"
+        },
         foo => {
             dsn =>  "dbi:SQLite:dbname=$dbfile",
+            schema_class => "Test::Schema"
+        },
+        bar => {
+            dsn =>  "dbi:SQLite:dbname=$dbfile2",
             schema_class => "Test::Schema"
         }
     }
 };
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile");
+my $dbh2 = DBI->connect("dbi:SQLite:dbname=$dbfile2");
 
 my @sql = (
 "CREATE TABLE 'cart' (
@@ -69,6 +79,7 @@ my @sql = (
 );
 
 $dbh->do($_) for @sql;
+$dbh2->do($_) for @sql;
 
 my $app = Dancer2->runner->psgi_app;
 is( ref $app, 'CODE', 'Got app' );
@@ -78,55 +89,69 @@ my $test = Plack::Test->create($app);
 my $jar = HTTP::Cookies->new;
 my $site = "http://localhost";
 
-my $req = GET $site . '/cart/new/'; 
-my $res = $test->request( $req );
-$jar->extract_cookies($res);
 
-subtest 'adding unexisting product' => sub {
-  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU00", 'quantity' => '1' ]; 
-  $jar->add_cookie_header( $req );
-  $res = $test->request( $req );
-  like(
-      $res->content, qr/Product doesn't exists/,'Get content for /cart/add_product/SU03'
-  );
-};
-
-subtest 'adding existing product' => sub {
-  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU03", 'quantity' => '1' ];
-  $jar->add_cookie_header( $req );
-  $res = $test->request( $req );
+subtest 'Adding products to default schema' =>sub {
+  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU03", 'quantity' => '7' ];
+  my $res = $test->request( $req );
+  $jar->extract_cookies( $res );
   like(
       $res->content, qr/SU03/,'Get content for /cart/add_product/SU03'
   );
-};
-
-subtest 'adding existing product on cart' => sub {
-  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU03", 'quantity' => '7' ];
-  $jar->add_cookie_header($req);
-  $res = $test->request( $req );
-  like(
-      $res->content, qr/'quantity'\s=>\s8/,'Get content for /cart/add_product/SU03'
-  );
-};
-
-subtest 'getting products' => sub {
-
-  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU04", 'quantity' => '1' ];
-  $jar->add_cookie_header( $req );
-  $test->request( $req );
-
-  $req = GET $site . '/cart/products';
+  $req = GET $site . '/cart/quantity/foo';
   $jar->add_cookie_header( $req );
   $res = $test->request( $req );
   like(
-    $res->content,qr/Product1/, 'Get an array of products with their info - check Product 1' 
+    $res->content, qr/quantity=7/,'Get content /cart/quantity/foo'
+  );
+  
+};
+
+
+
+subtest 'Adding products to bar and cheking foo and bar schemas' =>sub {
+  my $req = POST $site . '/cart/add_product_bar', [ 'sku' => "SU04", 'quantity' => '1' ];
+  $jar->add_cookie_header( $req );
+  my $res = $test->request( $req );
+  like(
+      $res->content, qr/SU04/,'Get content for /cart/add_product_bar/SU04'
+  );
+  
+  $req = GET $site . '/cart/quantity/foo';
+  $jar->add_cookie_header( $req );
+  $res = $test->request( $req );
+  like(
+    $res->content, qr/quantity=7/,'Get content /cart/quantity/foo'
   );
 
+  $req = GET $site . '/cart/quantity/bar';
+  $jar->add_cookie_header( $req );
+  $res = $test->request( $req );
   like(
-    $res->content,qr/Product2/, 'Get an array of products with their info - check Product 2' 
+    $res->content, qr/quantity=1/,'Get content /cart/quantity/bar'
   );
 };
+
+
+subtest 'Clear cart' => sub {
+  my $req = GET $site . '/cart/clear_cart/bar';
+  $jar->add_cookie_header( $req );
+  my $res = $test->request( $req );
+  like(
+      $res->content, qr/\[\]/,'Get content for /cart/clear_cart'
+  );
+  
+  $req = GET $site . '/cart/quantity/foo';
+  $jar->add_cookie_header( $req );
+  $res = $test->request( $req );
+  like(
+    $res->content, qr/quantity=7/,'Get content /cart/quantity/foo'
+  );
+
+};
+
 
 unlink $dbfile;
+unlink $dbfile2;
 
-done_testing;
+done_testing();
+

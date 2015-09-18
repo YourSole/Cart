@@ -19,7 +19,7 @@ use TestApp;
 eval { use Dancer2::Plugin::DBIC; };
 if ($@) {
     plan skip_all =>
-        'Dancer2::Plugin::DBIC required for these test';
+        'Dancer2::Plugin::DBIC required for this test';
 }
 
 my (undef, $dbfile) = tempfile(SUFFIX => '.db');
@@ -85,7 +85,7 @@ $req = POST $site . '/cart/add_product', [ 'sku' => "SU04", 'quantity' => '1' ];
 $jar->add_cookie_header( $req );
 $test->request( $req );
 
-subtest 'adding existing product on cart' => sub {
+subtest 'Clearing cart' => sub {
   my $req = GET $site . '/cart/clear_cart';
   $jar->add_cookie_header( $req );
   $res = $test->request( $req );

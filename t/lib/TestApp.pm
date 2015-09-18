@@ -21,13 +21,25 @@ post '/cart/add_product' => sub {
   $res->{error} ? $res->{error} : Dumper($res);
 };
 
+get '/cart/quantity/:schema?' => sub {
+  my $schema = param('schema');
+  'quantity='.product_quantity($schema);
+};
+
+post '/cart/add_product_bar' => sub {
+  my $product = { sku => param('sku'), quantity => param('quantity') };
+  my $res = cart_add($product, 'bar');
+  $res->{error} ? $res->{error} : Dumper($res);
+};
+
 get '/cart/products' => sub {
   Dumper(products);
 };
 
-get '/cart/clear_cart' => sub {
-  clear_cart;
-  Dumper(products);
+get '/cart/clear_cart/:schema?' => sub {
+  my $schema = param('schema');
+  clear_cart('main',$schema);
+  Dumper(products($schema));
 };
 
 1;

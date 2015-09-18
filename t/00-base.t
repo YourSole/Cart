@@ -17,7 +17,7 @@ use TestApp;
 eval { use Dancer2::Plugin::DBIC; };
 if ($@) {
     plan skip_all =>
-        'Dancer2::Plugin::DBIC required for these test';
+        'Dancer2::Plugin::DBIC required for this test';
 }
 
 my (undef, $dbfile) = tempfile(SUFFIX => '.db');
