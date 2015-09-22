@@ -8,6 +8,7 @@ use namespace::clean;
 my $cart_name = undef;
 my $cart_product_name = undef; 
 my $product_name = undef;
+my $product_pk = undef;
  
 register 'cart' => \&_cart;
 register 'cart_add' => \&_cart_add;
@@ -21,6 +22,7 @@ sub _check_result_names {
   $cart_name = plugin_setting->{cart_name} ? plugin_setting->{cart_name}: 'Cart' unless $cart_name;
   $cart_product_name = plugin_setting->{cart_product_name}? plugin_setting->{cart_product_name}: 'CartProduct' unless $cart_product_name;
   $product_name = plugin_setting->{product_name} ? plugin_setting->{product_name} : 'Product' unless $product_name;
+  $product_pk = plugin_setting->{product_pk} ? plugin_setting->{product_pk} : 'sku' unless $product_pk;
 }
 
 sub _cart {
@@ -55,7 +57,7 @@ sub _products {
     },
   );
   while( my $cp = $cart_products->next ){
-    my $product =  $dsl->schema->resultset($product_name)->find({ sku => $cp->sku });
+    my $product =  $dsl->schema->resultset($product_name)->find({ $product_pk => $cp->$product_pk });
     push @{$arr}, {$product->get_columns};
   }
 
@@ -64,7 +66,8 @@ sub _products {
 
 sub get_product_info {
   my ( $dsl, $product, $schema ) = @_;
-  my $product_info = $dsl->schema($schema)->resultset($product_name)->find({ sku => $product->{sku} });
+  _check_result_names;
+  my $product_info = $dsl->schema($schema)->resultset($product_name)->find({ $product_pk => $product->{sku} });
   return $product_info ? { $product_info->get_columns } : { error => "Product doesn't exists."};
 };
 
@@ -73,7 +76,7 @@ sub cart_add_product {
   #check if the product exists other whise create a new one
   my $cart_product = $dsl->schema($schema)->resultset($cart_product_name)->find({
     cart_id =>  _cart($dsl)->{id},
-    sku => $product_info->{sku},
+    sku => $product_info->{$product_pk},
   });
   if( $cart_product ){
     $cart_product->update({
@@ -83,7 +86,7 @@ sub cart_add_product {
   else{
      $cart_product = $dsl->schema($schema)->resultset($cart_product_name)->create({
       cart_id =>  _cart($dsl)->{id},
-      sku => $product_info->{sku},
+      sku => $product_info->{$product_pk},
       price => $product_info->{price},
       quantity => $quantity,
     });
