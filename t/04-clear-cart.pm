@@ -86,7 +86,7 @@ $jar->add_cookie_header( $req );
 $test->request( $req );
 
 subtest 'Clearing cart' => sub {
-  my $req = GET $site . '/cart/clear_cart';
+  my $req = GET $site . '/cart/clear_cart/';
   $jar->add_cookie_header( $req );
   $res = $test->request( $req );
   like(
