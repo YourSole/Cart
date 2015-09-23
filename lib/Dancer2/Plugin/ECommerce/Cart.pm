@@ -65,7 +65,7 @@ sub _products {
   );
   while( my $cp = $cart_products->next ){
     my $product =  $dsl->schema->resultset($product_name)->find({ $product_pk => $cp->$product_pk });
-    push @{$arr}, {$product->get_columns};
+    push @{$arr}, {$product->get_columns, quantity => $cp->quantity };
   }
 
   $arr;
