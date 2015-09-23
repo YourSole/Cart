@@ -4,7 +4,8 @@ use strict;
 use warnings;
 use Dancer2::Plugin;
 use namespace::clean;
- 
+
+my $settings = undef;
 my $cart_name = undef;
 my $cart_product_name = undef; 
 my $product_name = undef;
@@ -18,20 +19,27 @@ register 'product_quantity' => \&_product_quantity;
 
 register_hook 'before_get_product_info';
 
-sub _check_result_names {
-  $cart_name = plugin_setting->{cart_name} ? plugin_setting->{cart_name}: 'Cart' unless $cart_name;
-  $cart_product_name = plugin_setting->{cart_product_name}? plugin_setting->{cart_product_name}: 'CartProduct' unless $cart_product_name;
-  $product_name = plugin_setting->{product_name} ? plugin_setting->{product_name} : 'Product' unless $product_name;
-  $product_pk = plugin_setting->{product_pk} ? plugin_setting->{product_pk} : 'sku' unless $product_pk;
-}
+my $load_settings = sub {
+  $settings = plugin_setting;
+  $cart_name = $settings->{cart_name} || 'Cart';
+  $cart_product_name = $settings->{cart_product_name} || 'CartProduct';
+  $product_name = $settings->{product_name} || 'Product';
+  $product_pk = $settings->{product_pk} || 'sku';
+};
+
+
+on_plugin_import {
+    my $dsl = shift;
+    my $app = $dsl->app;
+    $load_settings->();
+};
 
 sub _cart {
   my ($dsl, $name, $schema ) = @_;
-  _check_result_names;
   my $cart_info = {
     session => $dsl->session->{'id'}
   };
-
+  
   $cart_info->{name} = $name ? $name : 'main';
 
   my $cart = $dsl->schema($schema)->resultset($cart_name)->find_or_create($cart_info);
@@ -40,7 +48,6 @@ sub _cart {
 
 sub _cart_add {
   my ($dsl , $product, $schema) = @_;
-  _check_result_names;
   my $product_info = get_product_info($dsl, $product, $schema);
   return $product_info if $product_info->{error};
   my $cart_product = cart_add_product($dsl, $product_info, $product->{quantity}, $schema);
@@ -66,7 +73,7 @@ sub _products {
 
 sub get_product_info {
   my ( $dsl, $product, $schema ) = @_;
-  _check_result_names;
+
   my $product_info = $dsl->schema($schema)->resultset($product_name)->find({ $product_pk => $product->{sku} });
   return $product_info ? { $product_info->get_columns } : { error => "Product doesn't exists."};
 };
@@ -96,8 +103,8 @@ sub cart_add_product {
 
 sub _clear_cart {
   my ($dsl, $name, $schema) = @_;
-  #get cart_id
 
+  #get cart_id
   my $cart_id = _cart($dsl, $name, $schema)->{id}; 
 
   #delete the cart_product info
