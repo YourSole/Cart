@@ -42,4 +42,8 @@ get '/cart/clear_cart/:schema?' => sub {
   Dumper(products($schema));
 };
 
+get '/cart/subtotal' => sub {
+  subtotal;
+};
+
 1;

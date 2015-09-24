@@ -17,6 +17,7 @@ register 'cart_add' => \&_cart_add;
 register 'products' => \&_products;
 register 'clear_cart' => \&_clear_cart;
 register 'product_quantity' => \&_product_quantity;
+register 'subtotal' => \&_subtotal;
 
 register_hook 'before_get_product_info';
 
@@ -67,7 +68,7 @@ sub _products {
   );
   while( my $cp = $cart_products->next ){
     my $product =  $dsl->schema->resultset($product_name)->search({ $product_pk => $cp->sku })->single;
-    push @{$arr}, {$product->get_columns, quantity => $cp->quantity };
+    push @{$arr}, {$product->get_columns, quantity => $cp->quantity, price  => $cp->price };
   }
 
   $arr;
@@ -117,7 +118,7 @@ sub _clear_cart {
   #delete the cart_product info
   $dsl->schema($schema)->resultset($cart_product_name)->search({ cart_id => $cart_id })->delete_all;
   #delete products
-  $dsl->schema($schema)->resultset($cart_name)->find($cart_id)->delete;
+  $dsl->schema($schema)->resultset($cart_name)->search({ id => $cart_id })->delete;
 }
 
 
@@ -133,6 +134,20 @@ sub _product_quantity{
       as => ['quantity']
     });
  $rs->first->get_column('quantity') ? $rs->first->get_column('quantity') : 0;
+}
+
+sub _subtotal{
+  my ($dsl, $schema) = @_;
+  my $subtotal = 0;
+  my $cart_products = $dsl->schema($schema)->resultset($cart_product_name)->search(
+    {
+      cart_id => _cart($dsl)->{id},
+    },
+  );
+  while( my $cp = $cart_products->next ){
+    $subtotal += $cp->price * $cp->quantity;
+  }
+  $subtotal;
 }
 
 register_plugin;

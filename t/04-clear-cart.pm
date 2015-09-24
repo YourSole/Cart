@@ -85,6 +85,16 @@ $req = POST $site . '/cart/add_product', [ 'sku' => "SU04", 'quantity' => '1' ];
 $jar->add_cookie_header( $req );
 $test->request( $req );
 
+subtest 'Get subtotal' => sub {
+  my $req =  GET $site . '/cart/subtotal';
+  $jar->add_cookie_header( $req );
+  $res = $test->request( $req );
+  like(
+      $res->content, qr/80/,'Get content for /cart/subtotal'
+  );
+
+};
+
 subtest 'Clearing cart' => sub {
   my $req = GET $site . '/cart/clear_cart/';
   $jar->add_cookie_header( $req );
