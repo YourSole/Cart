@@ -33,7 +33,7 @@ t::lib::TestApp::set plugins => {
 my $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile");
 
 my @sql = (
-"CREATE TABLE 'cart' (
+"CREATE TABLE 'ec_cart' (
   'id'  INTEGER PRIMARY KEY AUTOINCREMENT,
   'name'  TEXT NOT NULL,
   'session' TEXT NOT NULL,

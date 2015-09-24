@@ -21,9 +21,9 @@ register_hook 'before_get_product_info';
 
 my $load_settings = sub {
   $settings = plugin_setting;
-  $cart_name = $settings->{cart_name} || 'Cart';
-  $cart_product_name = $settings->{cart_product_name} || 'CartProduct';
-  $product_name = $settings->{product_name} || 'Product';
+  $cart_name = $settings->{cart_name} || 'EcCart';
+  $cart_product_name = $settings->{cart_product_name} || 'EcCartProduct';
+  $product_name = $settings->{product_name} || 'EcProduct';
   $product_pk = $settings->{product_pk} || 'sku';
 };
 

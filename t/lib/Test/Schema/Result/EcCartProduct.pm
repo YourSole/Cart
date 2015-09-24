@@ -1,12 +1,12 @@
 use utf8;
-package Test::Schema::Result::CartProduct;
+package Test::Schema::Result::EcCartProduct;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
 =head1 NAME
 
-Test::Schema::Result::CartProduct
+Test::Schema::Result::EcCartProduct
 
 =cut
 
@@ -15,11 +15,11 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<cart_products>
+=head1 TABLE: C<ec_cart_product>
 
 =cut
 
-__PACKAGE__->table("cart_products");
+__PACKAGE__->table("ec_cart_product");
 
 =head1 ACCESSORS
 
@@ -28,7 +28,7 @@ __PACKAGE__->table("cart_products");
   data_type: 'integer'
   is_nullable: 0
 
-=head2 sku 
+=head2 sku
 
   data_type: 'text'
   is_nullable: 0
@@ -56,12 +56,24 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_nullable => 0 },
 );
 
+=head1 PRIMARY KEY
 
-# Created by DBIx::Class::Schema::Loader v0.07043 @ 2015-09-15 08:35:39
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:K+k00pcfWqa7w3bV0eRaow
+=over 4
+
+=item * L</cart_id>
+
+=item * L</sku>
+
+=back
+
+=cut
+
+__PACKAGE__->set_primary_key("cart_id", "sku");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07043 @ 2015-09-24 09:13:58
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:PZTJgjBGjNjgDP7mp7oMcw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
-
-__PACKAGE__->set_primary_key( qw/ cart_id sku / );
 1;

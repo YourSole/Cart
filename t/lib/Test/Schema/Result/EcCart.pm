@@ -1,12 +1,12 @@
 use utf8;
-package Test::Schema::Result::Cart;
+package Test::Schema::Result::EcCart;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
 =head1 NAME
 
-Test::Schema::Result::Cart
+Test::Schema::Result::EcCart
 
 =cut
 
@@ -15,11 +15,11 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<cart>
+=head1 TABLE: C<ec_cart>
 
 =cut
 
-__PACKAGE__->table("cart");
+__PACKAGE__->table("ec_cart");
 
 =head1 ACCESSORS
 
@@ -70,8 +70,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07043 @ 2015-09-15 08:35:39
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:S/8yJ3OjiOmyaEVH3y97XQ
+# Created by DBIx::Class::Schema::Loader v0.07043 @ 2015-09-24 08:57:40
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5czJzN5vKXKGKADA9AB3ag
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
