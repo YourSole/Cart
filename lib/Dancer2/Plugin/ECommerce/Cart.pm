@@ -10,6 +10,7 @@ my $cart_name = undef;
 my $cart_product_name = undef; 
 my $product_name = undef;
 my $product_pk = undef;
+my $product_price_f = undef;
  
 register 'cart' => \&_cart;
 register 'cart_add' => \&_cart_add;
@@ -25,6 +26,7 @@ my $load_settings = sub {
   $cart_product_name = $settings->{cart_product_name} || 'EcCartProduct';
   $product_name = $settings->{product_name} || 'EcProduct';
   $product_pk = $settings->{product_pk} || 'sku';
+  $product_price_f = $settings->{product_price_f} || 'price';
 };
 
 
@@ -64,7 +66,7 @@ sub _products {
     },
   );
   while( my $cp = $cart_products->next ){
-    my $product =  $dsl->schema->resultset($product_name)->find({ $product_pk => $cp->$product_pk });
+    my $product =  $dsl->schema->resultset($product_name)->search({ $product_pk => $cp->sku })->single;
     push @{$arr}, {$product->get_columns, quantity => $cp->quantity };
   }
 
@@ -99,7 +101,7 @@ sub cart_add_product {
      $cart_product = $dsl->schema($schema)->resultset($cart_product_name)->create({
       cart_id =>  _cart($dsl)->{id},
       sku => $product_info->{$product_pk},
-      price => $product_info->{price},
+      price => $product_info->{$product_price_f} || 0,
       quantity => $quantity,
     });
   }
