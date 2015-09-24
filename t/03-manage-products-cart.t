@@ -127,6 +127,24 @@ subtest 'getting products' => sub {
   );
 };
 
+subtest 'removing porducts' => sub {
+  
+  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU03", 'quantity' => '-8' ];
+  $jar->add_cookie_header( $req );
+  $test->request( $req );
+  $req = GET $site . '/cart/products';
+  $jar->add_cookie_header( $req );
+  $res = $test->request( $req );
+  unlike(
+    $res->content,qr/Product1/, 'Get an array of products with their info - product 1 disappear' 
+  );
+  like(
+    $res->content,qr/Product2/, 'Get an array of products with their info - product 2' 
+  );
+
+};
+
+
 unlink $dbfile;
 
 done_testing;

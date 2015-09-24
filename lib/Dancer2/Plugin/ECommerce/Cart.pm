@@ -86,9 +86,14 @@ sub cart_add_product {
     sku => $product_info->{$product_pk},
   });
   if( $cart_product ){
-    $cart_product->update({
-      quantity => $cart_product->quantity + $quantity
-    });
+   if ( $cart_product->quantity + $quantity > 0 ){
+      $cart_product->update({
+        quantity => $cart_product->quantity + $quantity
+      });
+    }
+    else{
+      $cart_product->delete;
+    }
   } 
   else{
      $cart_product = $dsl->schema($schema)->resultset($cart_product_name)->create({
