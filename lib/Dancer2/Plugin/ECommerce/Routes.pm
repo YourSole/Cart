@@ -1,7 +1,7 @@
 my $product_name = undef;
 my $product_pk = undef;
 
-$product_name = $settings->{product_name} || 'Product';
+$product_name = $settings->{product_name} || 'EcProduct';
 $product_pk = $settings->{product_pk} || 'sku';
 
 get '/products' => sub {

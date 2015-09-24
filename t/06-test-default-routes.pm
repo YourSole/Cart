@@ -25,7 +25,7 @@ my (undef, $dbfile) = tempfile(SUFFIX => '.db');
 
 t::lib::TestApp1::set plugins => {
     'ECommerce::Cart' => {
-      product_name => 'Product'
+      product_name => 'EcProduct'
     },
     DBIC => {
         foo => {
@@ -43,7 +43,7 @@ t::lib::TestApp1::set plugins => {
 my $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile");
 
 my @sql = (
-"CREATE TABLE 'product' (
+"CREATE TABLE 'ec_product' (
   'sku' TEXT NOT NULL,
   'name'  TEXT NOT NULL,
   'price' NUMERIC NOT NULL,
@@ -52,7 +52,7 @@ my @sql = (
 );",
 
 
-"CREATE TABLE 'cart' (
+"CREATE TABLE 'ec_cart' (
   'id'  INTEGER PRIMARY KEY AUTOINCREMENT,
   'name'  TEXT NOT NULL,
   'session' TEXT NOT NULL,
@@ -60,16 +60,16 @@ my @sql = (
 );",
 
 
-"CREATE TABLE 'cart_products' (
+"CREATE TABLE 'ec_cart_product' (
   'cart_id' INTEGER NOT NULL,
   'sku'  TEXT NOT NULL,
   'price' NUMERIC NOT NULL,
   'quantity'  INTEGER NOT NULL
 );",
 
-"INSERT INTO PRODUCT values ('SU03','Product1','10.00','description of the product1')",
-"INSERT INTO PRODUCT values ('SU04','Product2','11.00','description of the product2')",
-"INSERT INTO PRODUCT values ('SU05','Product3','12.00','description of the product3')",
+"INSERT INTO EC_PRODUCT values ('SU03','Product1','10.00','description of the product1')",
+"INSERT INTO EC_PRODUCT values ('SU04','Product2','11.00','description of the product2')",
+"INSERT INTO EC_PRODUCT values ('SU05','Product3','12.00','description of the product3')",
 
 );
 
