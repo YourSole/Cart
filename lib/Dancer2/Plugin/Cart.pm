@@ -1,4 +1,4 @@
-package Dancer2::Plugin::Cart::Base;
+package Dancer2::Plugin::Cart;
 our $VERSION = '0.0001';  #Version
 use strict;
 use warnings;
