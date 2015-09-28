@@ -31,7 +31,7 @@ get '/cart' => sub {
   my $page = "";
 
   if (@{$products} > 0 ) {
-    $page .= "<a href='products'> Continue shooping. </a>";
+    $page .= "<a href='products'> Continue shopping. </a>";
     $page .= "<table><tr><th>SKU</th><th></th><th>Quantity</th><th></th><th>Price</th></tr>\n";
     map{
       $page .= "<tr><td>".$_->{$product_pk}."</td><td><form method='post' action='cart/add'>
@@ -50,7 +50,7 @@ get '/cart' => sub {
     $page .= "<a href='cart/clear'> Clear your cart. </a>";
   }
   else{
-    $page .= "Your cart is empty. <a href='products'> Continue shooping. </a>";
+    $page .= "Your cart is empty. <a href='products'> Continue shopping. </a>";
   }
   $page;
 };
