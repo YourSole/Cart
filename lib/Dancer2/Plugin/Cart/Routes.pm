@@ -60,6 +60,39 @@ get '/cart/clear' => sub {
   redirect '/cart';
 };
 
+get '/cart/checkout' => sub {
+  $page = "
+    <form method='post' action='checkout'>
+    <input type='text' name='email' value='".param('email')."' paceholder='email\@domain.com'>
+    <input type='submit' value = 'Proceed'>
+    </form>";
+};
+
+post '/cart/checkout' => sub {
+  #Place order
+
+  #Validate user info
+  my $email = param('email'); 
+  if (! (uc($email) =~ /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}/) ){
+    redirect '/cart/checkout' 
+  }
+  
+  session->write('email',$email);
+
+  #log the info
+  place_order;
+
+  redirect '/cart/receipt'
+};
+
+get '/cart/receipt' => sub {
+  my $page = "";
+  my $cart = cart;
+  my $status = $cart->{status} == '0' ? 'Incomplete' : 'Complete';
+  $page .= "Status: $status" ;
+
+};
+
 1;
 
 

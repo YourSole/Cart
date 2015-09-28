@@ -58,7 +58,8 @@ my @sql = (
   'id'  INTEGER PRIMARY KEY AUTOINCREMENT,
   'name'  TEXT NOT NULL,
   'session' TEXT NOT NULL,
-  'user_id' INTEGER
+  'user_id' INTEGER,
+  'status'  INTEGER NOT NULL DEFAULT '0' 
 );",
 
 
@@ -147,6 +148,47 @@ subtest 'Products sort and filtered' => sub {
   unlike(
     $res->content, qr/SU10/, 'SU10 has been excluded'
   );
+};
+
+
+subtest 'checkout process' => sub {
+  my $req = GET $site .'/cart/checkout';
+  $jar->add_cookie_header( $req );
+  my $res = $test->request ( $req );
+  is(
+    $res->{_rc}, '200','Get content /products'
+  );  
+
+
+  $req = POST $site . '/cart/checkout', [ 'email' => "" ];
+  $jar->add_cookie_header($req);
+  $res = $test->request( $req );
+  is(
+    $res->{_rc}, '302','Validation redirects to checkout page'
+  );
+  like(
+    $res->header('location'), qr/\/cart\/checkout/,'Redirect to checkout again'
+  );
+  
+  $req = POST $site . '/cart/checkout', [ 'email' => "email\@domain.com" ];
+  $jar->add_cookie_header($req);
+  $res = $test->request( $req );
+  is(
+    $res->{_rc}, '302','Validation redirects to receipt page'
+  );
+  like(
+    $res->header('location'), qr/\/cart\/receipt/,'Redirect to receipt page'
+  );
+
+
+  $req = GET $site . '/cart/receipt';
+  $jar->add_cookie_header($req);
+  $res = $test->request( $req );
+
+  like(
+    $res->content, qr/Status: Complete/,'Get a receipt and show a cart completed.'
+  );
+
 };
 
 unlink $dbfile;

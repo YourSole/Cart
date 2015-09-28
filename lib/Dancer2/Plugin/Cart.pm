@@ -21,6 +21,7 @@ register 'products' => \&_products;
 register 'clear_cart' => \&_clear_cart;
 register 'product_quantity' => \&_product_quantity;
 register 'subtotal' => \&_subtotal;
+register 'place_order' => \&_place_order;
 
 register_hook 'before_get_product_info';
 
@@ -45,7 +46,7 @@ on_plugin_import {
 sub _cart {
   my ($dsl, $name, $schema ) = @_;
   my $cart_info = {
-    session => $dsl->session->{'id'}
+    session => $dsl->session->{'id'},
   };
   
   $cart_info->{name} = $name ? $name : 'main';
@@ -74,7 +75,7 @@ sub _cart_products {
   my $arr = [];
   my $cart_products = $dsl->schema($schema)->resultset($cart_product_name)->search( 
     { 
-      cart_id => _cart($dsl)->{id}, 
+      cart_id => _cart($dsl,undef,$schema)->{id}, 
     },
   );
   while( my $cp = $cart_products->next ){
@@ -112,7 +113,7 @@ sub cart_add_product {
   } 
   else{
      $cart_product = $dsl->schema($schema)->resultset($cart_product_name)->create({
-      cart_id =>  _cart($dsl)->{id},
+      cart_id =>  _cart($dsl,undef, $schema)->{id},
       sku => $product_info->{$product_pk},
       price => $product_info->{$product_price_f} || 0,
       quantity => $quantity,
@@ -136,7 +137,7 @@ sub _clear_cart {
 
 sub _product_quantity{
   my ($dsl, $schema) = @_;
-  my $cart_id = _cart($dsl)->{id}; 
+  my $cart_id = _cart($dsl,undef,$schema)->{id}; 
   my $rs = $dsl->schema($schema)->resultset($cart_product_name)->search(
     { 
       cart_id => $cart_id 
@@ -153,13 +154,23 @@ sub _subtotal{
   my $subtotal = 0;
   my $cart_products = $dsl->schema($schema)->resultset($cart_product_name)->search(
     {
-      cart_id => _cart($dsl)->{id},
+      cart_id => _cart($dsl,undef,$schema)->{id},
     },
   );
   while( my $cp = $cart_products->next ){
     $subtotal += $cp->price * $cp->quantity;
   }
   $subtotal;
+}
+
+
+sub _place_order{
+  my ($dsl, $name, $schema) = @_;
+  my $cart = _cart($dsl,$name,$schema);
+  my $cart_temp = $dsl->schema($schema)->resultset($cart_name)->find($cart->{id});
+  $cart_temp->update({
+    status => 1,
+  });
 }
 
 register_plugin;
