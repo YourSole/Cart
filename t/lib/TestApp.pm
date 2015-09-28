@@ -33,7 +33,7 @@ post '/cart/add_product_bar' => sub {
 };
 
 get '/cart/products' => sub {
-  Dumper(products);
+  Dumper(cart_products);
 };
 
 get '/cart/clear_cart/:schema?' => sub {

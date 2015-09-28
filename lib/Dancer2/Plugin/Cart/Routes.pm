@@ -27,7 +27,7 @@ post '/cart/add' => sub {
 };
 
 get '/cart' => sub {
-  my $products = products;
+  my $products = cart_products;
   my $page = "";
 
   if (@{$products} > 0 ) {

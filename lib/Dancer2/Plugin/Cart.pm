@@ -14,7 +14,7 @@ my $product_price_f = undef;
  
 register 'cart' => \&_cart;
 register 'cart_add' => \&_cart_add;
-register 'products' => \&_products;
+register 'cart_products' => \&_cart_products;
 register 'clear_cart' => \&_clear_cart;
 register 'product_quantity' => \&_product_quantity;
 register 'subtotal' => \&_subtotal;
@@ -58,7 +58,7 @@ sub _cart_add {
   return $cart_product;
 };
 
-sub _products {
+sub _cart_products {
   my ($dsl, $schema) = @_;
   my $arr = [];
   my $cart_products = $dsl->schema($schema)->resultset($cart_product_name)->search( 
