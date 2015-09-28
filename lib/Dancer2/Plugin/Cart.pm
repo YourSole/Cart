@@ -11,10 +11,13 @@ my $cart_product_name = undef;
 my $product_name = undef;
 my $product_pk = undef;
 my $product_price_f = undef;
+my $product_filter = undef;
+my $product_order = undef;
  
 register 'cart' => \&_cart;
 register 'cart_add' => \&_cart_add;
 register 'cart_products' => \&_cart_products;
+register 'products' => \&_products;
 register 'clear_cart' => \&_clear_cart;
 register 'product_quantity' => \&_product_quantity;
 register 'subtotal' => \&_subtotal;
@@ -28,6 +31,8 @@ my $load_settings = sub {
   $product_name = $settings->{product_name} || 'EcProduct';
   $product_pk = $settings->{product_pk} || 'sku';
   $product_price_f = $settings->{product_price_f} || 'price';
+  $product_filter = $settings->{product_filter} || undef;
+  $product_order = $settings->{product_order} || undef;
 };
 
 
@@ -58,6 +63,12 @@ sub _cart_add {
   return $cart_product;
 };
 
+sub _products {
+  my ($dsl, $schema) = @_;
+  my @products = $dsl->schema($schema)->resultset($product_name)->search( $product_filter , {  order_by => $product_order } );
+  @products;
+}
+
 sub _cart_products {
   my ($dsl, $schema) = @_;
   my $arr = [];
@@ -83,6 +94,7 @@ sub get_product_info {
 
 sub cart_add_product {
   my ( $dsl, $product_info, $quantity, $schema ) = @_;
+  $load_settings->();
   #check if the product exists other whise create a new one
   my $cart_product = $dsl->schema($schema)->resultset($cart_product_name)->find({
     cart_id =>  _cart($dsl)->{id},

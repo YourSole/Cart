@@ -25,7 +25,7 @@ if ($@) {
 my (undef, $dbfile) = tempfile(SUFFIX => '.db');
 
 t::lib::TestApp::set plugins => {
-    'ECommerce::Cart' => {
+    'Cart' => {
       cart_name => 'EcCart',
       cart_product_name => 'EcCartProduct',
       product_name => 'EcProduct',

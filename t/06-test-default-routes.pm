@@ -24,8 +24,10 @@ if ($@) {
 my (undef, $dbfile) = tempfile(SUFFIX => '.db');
 
 t::lib::TestApp1::set plugins => {
-    'ECommerce::Cart' => {
-      product_name => 'EcProduct'
+    'Cart' => {
+      product_name => 'EcProduct',
+      product_filter => { name => { 'like', '%SU0%'} },
+      product_order => { -asc => 'name' },
     },
     DBIC => {
         foo => {
@@ -70,6 +72,7 @@ my @sql = (
 "INSERT INTO EC_PRODUCT values ('SU03','Product1','10.00','description of the product1')",
 "INSERT INTO EC_PRODUCT values ('SU04','Product2','11.00','description of the product2')",
 "INSERT INTO EC_PRODUCT values ('SU05','Product3','12.00','description of the product3')",
+"INSERT INTO EC_PRODUCT values ('SU10','Product4','13.00','description of the product4')",
 
 );
 
@@ -134,7 +137,17 @@ subtest 'Add product' => sub {
   
 };
 
-
+subtest 'Products sort and filtered' => sub {
+  my $req = GET $site .'/products';
+  $jar->add_cookie_header( $req );
+  my $res = $test->request ( $req );
+  is(
+    $res->{_rc}, '200','Get content /products'
+  );
+  unlike(
+    $res->content, qr/SU10/, 'SU10 has been excluded'
+  );
+};
 
 unlink $dbfile;
 done_testing();

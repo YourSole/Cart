@@ -8,7 +8,7 @@ $product_price_f = app->config->{'plugins'}->{'ECommerce::Cart'}->{product_price
 
 get '/products' => sub {
   my $page = "<table><tr><th>Sku</th><th>Action</th></tr>";
-  my @products = schema->resultset($product_name)->all; 
+  my @products = products;
   map {
     $page .= "<tr><td>".$_->$product_pk."</td><td><form method='post' action='cart/add'>
     <input type='hidden' name='sku' value='".$_->$product_pk."'>
