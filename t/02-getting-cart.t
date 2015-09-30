@@ -40,6 +40,13 @@ my @sql = (
   'user_id' INTEGER,
   'status'  INTEGER NOT NULL DEFAULT '0' 
 );",
+
+"CREATE TABLE 'ec_cart_product' (
+  'cart_id' INTEGER NOT NULL,
+  'sku'  TEXT NOT NULL,
+  'price' NUMERIC NOT NULL,
+  'quantity'  INTEGER NOT NULL
+);",
 );
 
 $dbh->do($_) for @sql;

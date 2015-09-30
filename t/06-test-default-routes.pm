@@ -26,8 +26,8 @@ my (undef, $dbfile) = tempfile(SUFFIX => '.db');
 t::lib::TestApp1::set plugins => {
     'Cart' => {
       product_name => 'EcProduct',
-      product_filter => { name => { 'like', '%SU0%'} },
-      product_order => { -asc => 'name' },
+      product_filter => "{ name => { 'like', '%SU0%'} }",
+      product_order => "{ -asc => 'name' }",
     },
     DBIC => {
         foo => {
@@ -185,7 +185,7 @@ subtest 'checkout process' => sub {
   $jar->add_cookie_header($req);
   $res = $test->request( $req );
   like(
-    $res->content, qr/Status: Complete/,'cart completed.'
+    $res->content, qr/Complete/,'cart completed.'
   );
   like(
     $res->content, qr/"session":/,'Have session title on cart log.'
@@ -194,10 +194,10 @@ subtest 'checkout process' => sub {
     $res->content, qr/"subtotal":20/,'Get the subtotal on log info.'
   );
   like(
-    $res->content, qr/"quantity":2/,'Get the quantity on log info.'
+    $res->content, qr/"ec_quantity":2/,'Get the quantity on log info.'
   );
   like(
-    $res->content, qr/"data":\{"email":"email\@domain.com"\}/,'Get session data on log info.'
+    $res->content, qr/"email":"email\@domain.com"/,'Get session data on log info.'
   );
 };
 
