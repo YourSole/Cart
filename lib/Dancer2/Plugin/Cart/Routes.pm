@@ -86,11 +86,12 @@ post '/cart/checkout' => sub {
 };
 
 get '/cart/receipt' => sub {
-  my $page = "";
-  my $cart = cart;
+  my $page = "<p>Checkout has been successful!!</p>";
+  my $cart = cart_complete;
   my $status = $cart->{status} == '0' ? 'Incomplete' : 'Complete';
-  $page .= "Status: $status" ;
-
+  $page .= "\nStatus: $status\n" ;
+  $page .= "Cart info: ". $cart->{log}."\n";
+  $page .= "Cart id: ". $cart->{id}."\n";
 };
 
 1;

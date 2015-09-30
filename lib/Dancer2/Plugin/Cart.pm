@@ -15,6 +15,7 @@ my $product_filter = undef;
 my $product_order = undef;
  
 register 'cart' => \&_cart;
+register 'cart_complete' => \&_cart_complete;
 register 'cart_add' => \&_cart_add;
 register 'cart_products' => \&_cart_products;
 register 'products' => \&_products;
@@ -53,6 +54,18 @@ sub _cart {
 
   my $cart = $dsl->schema($schema)->resultset($cart_name)->find_or_create($cart_info);
   return {$cart->get_columns};
+};
+
+sub _cart_complete {
+  my ($dsl, $name, $schema ) = @_;
+  my $cart_info = {
+    session => $dsl->session->{'id'}."_1",
+    status => "1",
+  };
+  $cart_info->{name} = $name ? $name : 'main';
+  my $cart = $dsl->schema($schema)->resultset($cart_name)->search($cart_info)->single;
+  return { $cart->get_columns } if $cart;
+  return { error => 'Cart not found' };
 };
 
 sub _cart_add {
@@ -170,6 +183,13 @@ sub _place_order{
   my $cart_temp = $dsl->schema($schema)->resultset($cart_name)->find($cart->{id});
   $cart_temp->update({
     status => 1,
+    session => $dsl->session->{id}."_1",
+    log => $dsl->to_json( {
+      data => $dsl->session->{data},
+      session => $dsl->session->{id},
+      products => _cart_products( $dsl, $schema ),
+      subtotal => _subtotal( $dsl, $schema ) },
+    ),
   });
 }
 

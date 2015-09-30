@@ -59,7 +59,8 @@ my @sql = (
   'name'  TEXT NOT NULL,
   'session' TEXT NOT NULL,
   'user_id' INTEGER,
-  'status'  INTEGER NOT NULL DEFAULT '0' 
+  'status'  INTEGER NOT NULL DEFAULT '0',
+  'log' TEXT
 );",
 
 
@@ -180,15 +181,24 @@ subtest 'checkout process' => sub {
     $res->header('location'), qr/\/cart\/receipt/,'Redirect to receipt page'
   );
 
-
   $req = GET $site . '/cart/receipt';
   $jar->add_cookie_header($req);
   $res = $test->request( $req );
-
   like(
-    $res->content, qr/Status: Complete/,'Get a receipt and show a cart completed.'
+    $res->content, qr/Status: Complete/,'cart completed.'
   );
-
+  like(
+    $res->content, qr/"session":/,'Have session title on cart log.'
+  );
+  like(
+    $res->content, qr/"subtotal":20/,'Get the subtotal on log info.'
+  );
+  like(
+    $res->content, qr/"quantity":2/,'Get the quantity on log info.'
+  );
+  like(
+    $res->content, qr/"data":\{"email":"email\@domain.com"\}/,'Get session data on log info.'
+  );
 };
 
 unlink $dbfile;
