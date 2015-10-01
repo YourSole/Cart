@@ -23,7 +23,7 @@ post '/cart/add_product' => sub {
 
 get '/cart/quantity/:schema?' => sub {
   my $schema = param('schema');
-  'quantity='.product_quantity($schema);
+  'quantity='.product_quantity({ schema => $schema });
 };
 
 post '/cart/add_product_bar' => sub {
