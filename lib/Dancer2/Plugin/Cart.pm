@@ -58,20 +58,10 @@ sub _cart {
 
   my $cart = $dsl->schema($schema)->resultset($cart_name)->find_or_create($cart_info);
 
-  my $arr = [];
-  my $cart_products = $dsl->schema($schema)->resultset($cart_product_name)->search( 
-    { 
-      cart_id => $cart->id, 
-    },
-  );
-  my $subtotal = 0;
-  while( my $cp = $cart_products->next ){
-    my $product =  $dsl->schema->resultset($product_name)->search({ $product_pk => $cp->sku })->single;
-    $subtotal += $cp->price * $cp->quantity;
-    push @{$arr}, {$product->get_columns, ec_quantity => $cp->quantity, ec_price  => $cp->price };
-  }
+  $params->{cart_id} = $cart->id;
+  my $cart_product_info = _cart_product_info ( $dsl, $params );
 
-  return { $cart->get_columns, products => $arr, subtotal => $subtotal } if $cart;
+  return { $cart->get_columns, products => $cart_product_info->{products}, subtotal => $cart_product_info->{subtotal} } if $cart;
 
   return {$cart->get_columns};
 };
@@ -79,21 +69,47 @@ sub _cart {
 sub _cart_complete {
   my ($dsl, $params ) = @_;
   my ($name, $schema) = _parse_params($params);
-
-  my $cart_info = {
-    id => $params->{cart_id},
-    status => "1",
-  };
-
-  $cart_info->{name} = $name ? $name : 'main';
-  my $cart = $dsl->schema($schema)->resultset($cart_name)->search($cart_info)->first;
+ 
+  $params->{status} = 1;
+  my $cart = _cart_info( $dsl, $params);
 
   return { error => 'Cart not found' } unless $cart;
+
+  $params->{cart_id} = $cart->id;
+  my $cart_product_info = _cart_product_info ( $dsl, $params );
+
+  return { $cart->get_columns, products => $cart_product_info->{products}, subtotal => $cart_product_info->{subtotal} } if $cart;
+
+  return { error => 'Cart not found' };
+};
+
+
+sub _cart_info {
+  my ($dsl, $params ) = @_;
+  my ($name, $schema) = _parse_params($params);
+  my $status = $params->{status} ? $params->{status} : 0;
+  
+  my $cart_info = {
+    status => $status,
+  };
+
+  $cart_info->{id} = $params->{cart_id} if $params->{cart_id};
+  $cart_info->{name} = $name ? $name : 'main';
+
+  my $cart = $dsl->schema($schema)->resultset($cart_name)->search($cart_info)->first;
+
+  return $cart;
+};
+
+sub _cart_product_info {
+  my ($dsl, $params ) = @_;
+  my ($name, $schema) = _parse_params($params);
+  my $cart_id = $params->{cart_id};
 
   my $arr = [];
   my $cart_products = $dsl->schema($schema)->resultset($cart_product_name)->search( 
     { 
-      cart_id => $cart->id, 
+      cart_id => $cart_id,
     },
   );
   my $subtotal = 0;
@@ -102,10 +118,7 @@ sub _cart_complete {
     $subtotal += $cp->price * $cp->quantity;
     push @{$arr}, {$product->get_columns, ec_quantity => $cp->quantity, ec_price  => $cp->price };
   }
-
-  return { $cart->get_columns, products => $arr, subtotal => $subtotal } if $cart;
-
-  return { error => 'Cart not found' };
+  return { products => $arr , subtotal => $subtotal };
 };
 
 sub _cart_add {
@@ -121,9 +134,10 @@ sub _cart_add {
 
 sub _products {
   my ($dsl, $schema) = @_;
-  $product_filter = eval $product_filter if $product_filter;
-  $product_order = eval $product_order if $product_order;
-  my @products = $dsl->schema($schema)->resultset($product_name)->search( $product_filter , {  order_by => $product_order } );
+  $product_filter = $product_filter ? eval $product_filter : {};
+  $product_order = $product_order ? { order_by => { eval $product_order } } : {};
+
+  my @products = $dsl->schema($schema)->resultset($product_name)->search( $product_filter , $product_order );
   @products;
 }
 
