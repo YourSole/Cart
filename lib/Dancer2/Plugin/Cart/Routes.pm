@@ -28,10 +28,10 @@ post '/cart/add' => sub {
 };
 
 get '/cart' => sub {
-  my $products = cart_products;
+  my $cart = cart;
   my $page = "<h1>Cart</h1>";
 
-  if (@{$products} > 0 ) {
+  if (@{$cart->{products}} > 0 ) {
     $page .= "<a href='products'> Continue shopping. </a>";
     $page .= "<table><tr><th>SKU</th><th></th><th>Quantity</th><th></th><th>Price</th></tr>\n";
     map{
@@ -45,7 +45,7 @@ get '/cart' => sub {
         <input type='hidden' name='quantity' value='1'>
         <input type='submit' value = '+1'>
       </form></td><td>".$_->{ec_price}."</td></tr>\n";
-    } @{$products};
+    } @{$cart->{products}};
     $page .= "<tr><td colspan=4>Subtotal</td><td>".subtotal."</td></tr>";
     $page .= "</table>";
     $page .= "<p><a href='cart/clear'> Clear your cart. </a></p>";
@@ -63,12 +63,12 @@ get '/cart/clear' => sub {
 };
 
 get '/cart/checkout' => sub {
-  my $products = cart_products;
+  my $cart = cart;
 
   my $page = "<h1>Cart info</h1>";
 
   $page .= "<table><tr><th>SKU</th><th>Quantity</th><th>Price</th></tr>";
-  map{ $page .= "<tr><td>".$_->{$product_pk}."</td><td>". $_->{ec_quantity} ."</td><td>".$_->{ec_price}."</td></tr>"; } @{$products};
+  map{ $page .= "<tr><td>".$_->{$product_pk}."</td><td>". $_->{ec_quantity} ."</td><td>".$_->{ec_price}."</td></tr>"; } @{$cart->{products}};
   $page .= "<tr><td colspan=2>Subtotal</td><td>".subtotal."</td></tr>";
   $page .= "</table>";
 
@@ -96,15 +96,23 @@ post '/cart/checkout' => sub {
   
   session->write('email',$email);
 
+  
+  #Delete cc info.
+
   #log the info on place order and set the cart_id on session
   session->write('cart_id', place_order);
+  
+  #Clear form variables and private info
+  session->delete('email');
 
   redirect '/cart/receipt'
 };
 
 get '/cart/receipt' => sub {
   my $page = "<p>Checkout has been successful!!</p>";
-  my $cart = cart_complete( { cart_id => session->read( 'cart_id' ) } );
+  my $cart = cart( { status => 1, cart_id => session->read( 'cart_id' ) } );
+  session->delete('cart_id');
+
   $page .= "<h1>Cart info</h1>";
   $page .= "<table><tr><th>SKU</th><th>Quantity</th><th>Price</th></tr>";
   map{ $page .= "<tr><td>".$_->{$product_pk}."</td><td>". $_->{ec_quantity} ."</td><td>".$_->{ec_price}."</td></tr>"; } @{$cart->{products}};

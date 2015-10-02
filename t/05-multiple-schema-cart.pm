@@ -55,7 +55,6 @@ my @sql = (
   'id'  INTEGER PRIMARY KEY AUTOINCREMENT,
   'name'  TEXT NOT NULL,
   'session' TEXT NOT NULL,
-  'user_id' INTEGER,
   'status'  INTEGER NOT NULL DEFAULT '0',
   'log' TEXT
 );",

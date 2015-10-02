@@ -15,9 +15,7 @@ my $product_filter = undef;
 my $product_order = undef;
  
 register 'cart' => \&_cart;
-register 'cart_complete' => \&_cart_complete;
 register 'cart_add' => \&_cart_add;
-register 'cart_products' => \&_cart_products;
 register 'products' => \&_products;
 register 'clear_cart' => \&_clear_cart;
 register 'product_quantity' => \&_product_quantity;
@@ -40,71 +38,41 @@ my $load_settings = sub {
 
 on_plugin_import {
     my $dsl = shift;
-    my $app = $dsl->app;
     $load_settings->();
 };
 
 sub _cart {
   my ($dsl, $params ) = @_;
-  my ($name, $schema) = _parse_params($params);
-  
+  my ($name, $schema, $status, $cart_id) = parse_params($params);
   $load_settings->();
-
   my $cart_info = {
     session => $dsl->session->{'id'},
   };
-  
+
   $cart_info->{name} = $name ? $name : 'main';
+  $cart_info->{status} = $status ? $status : 0;
 
-  my $cart = $dsl->schema($schema)->resultset($cart_name)->find_or_create($cart_info);
+  if ( $cart_id ){
+    $cart_info->{id} = $cart_id;
+    delete $cart_info->{session};
+  }
 
+  my $cart = undef;
+
+  if ( $cart_info->{status} == 0 ){
+    $cart = $dsl->schema($schema)->resultset($cart_name)->find_or_create($cart_info);
+  }
+  else{
+    $cart = $dsl->schema($schema)->resultset($cart_name)->search($cart_info)->first;
+  }
   $params->{cart_id} = $cart->id;
-  my $cart_product_info = _cart_product_info ( $dsl, $params );
-
+  my $cart_product_info = cart_product_info ( $dsl, $params );
   return { $cart->get_columns, products => $cart_product_info->{products}, subtotal => $cart_product_info->{subtotal} } if $cart;
-
-  return {$cart->get_columns};
 };
 
-sub _cart_complete {
+sub cart_product_info {
   my ($dsl, $params ) = @_;
-  my ($name, $schema) = _parse_params($params);
- 
-  $params->{status} = 1;
-  my $cart = _cart_info( $dsl, $params);
-
-  return { error => 'Cart not found' } unless $cart;
-
-  $params->{cart_id} = $cart->id;
-  my $cart_product_info = _cart_product_info ( $dsl, $params );
-
-  return { $cart->get_columns, products => $cart_product_info->{products}, subtotal => $cart_product_info->{subtotal} } if $cart;
-
-  return { error => 'Cart not found' };
-};
-
-
-sub _cart_info {
-  my ($dsl, $params ) = @_;
-  my ($name, $schema) = _parse_params($params);
-  my $status = $params->{status} ? $params->{status} : 0;
-  
-  my $cart_info = {
-    status => $status,
-  };
-
-  $cart_info->{id} = $params->{cart_id} if $params->{cart_id};
-  $cart_info->{name} = $name ? $name : 'main';
-
-  my $cart = $dsl->schema($schema)->resultset($cart_name)->search($cart_info)->first;
-
-  return $cart;
-};
-
-sub _cart_product_info {
-  my ($dsl, $params ) = @_;
-  my ($name, $schema) = _parse_params($params);
-  my $cart_id = $params->{cart_id};
+  my ($name, $schema, $status, $cart_id ) = parse_params($params);
 
   my $arr = [];
   my $cart_products = $dsl->schema($schema)->resultset($cart_product_name)->search( 
@@ -123,7 +91,9 @@ sub _cart_product_info {
 
 sub _cart_add {
   my ($dsl , $product, $params) = @_;
-  my ($name, $schema) = _parse_params($params);
+  $load_settings->();
+
+  my ($name, $schema) = parse_params($params);
 
   my $product_info = get_product_info($dsl, $product, { schema => $schema } );
   return $product_info if $product_info->{error};
@@ -134,30 +104,13 @@ sub _cart_add {
 
 sub _products {
   my ($dsl, $schema) = @_;
-  $product_filter = $product_filter ? eval $product_filter : {};
-  $product_order = $product_order ? { order_by => { eval $product_order } } : {};
 
-  my @products = $dsl->schema($schema)->resultset($product_name)->search( $product_filter , $product_order );
+  my $product_filter_eval = $product_filter ? eval $product_filter : {};
+  my $product_order_eval  = $product_order ? { order_by => { eval $product_order } } : {};
+  
+  my @products = $dsl->schema($schema)->resultset($product_name)->search( $product_filter_eval , $product_order_eval );
   @products;
 }
-
-sub _cart_products {
-  my ( $dsl, $params )  = @_;
-  my ($name, $schema) = _parse_params($params);
-
-  my $arr = [];
-  my $cart_products = $dsl->schema($schema)->resultset($cart_product_name)->search( 
-    { 
-      cart_id => _cart($dsl,{ name => $name, schema => $schema } )->{id}, 
-    },
-  );
-  while( my $cp = $cart_products->next ){
-    my $product =  $dsl->schema->resultset($product_name)->search({ $product_pk => $cp->sku })->single;
-    push @{$arr}, {$product->get_columns, ec_quantity => $cp->quantity, ec_price  => $cp->price };
-  }
-
-  $arr;
-};
 
 sub get_product_info {
   my ( $dsl, $product, $params ) = @_;
@@ -199,7 +152,7 @@ sub cart_add_product {
 
 sub _clear_cart {
   my ($dsl, $params ) = @_;
-  my ($name, $schema) = _parse_params($params);
+  my ($name, $schema) = parse_params($params);
 
   #get cart_id
   my $cart_id = _cart($dsl, { name => $name, schema => $schema } )->{id}; 
@@ -210,10 +163,9 @@ sub _clear_cart {
   $dsl->schema($schema)->resultset($cart_name)->search({ id => $cart_id })->delete;
 }
 
-
 sub _product_quantity{
   my ($dsl, $params) = @_;
-  my ($name, $schema) = _parse_params($params);
+  my ($name, $schema) = parse_params($params);
   my $cart_id = _cart($dsl,{name => $name,  schema => $schema })->{id}; 
   my $rs = $dsl->schema($schema)->resultset($cart_product_name)->search(
     { 
@@ -222,13 +174,14 @@ sub _product_quantity{
     {
       select => [{ sum => 'quantity' }],
       as => ['quantity']
-    });
- $rs->first->get_column('quantity') ? $rs->first->get_column('quantity') : 0;
+    }
+  );
+  $rs->first->get_column('quantity') ? $rs->first->get_column('quantity') : 0;
 }
 
 sub _subtotal{
   my ($dsl, $params) = @_;
-  my ($name,$schema) = _parse_params($params);
+  my ($name,$schema) = parse_params($params);
   my $subtotal = 0;
   my $cart_products = $dsl->schema($schema)->resultset($cart_product_name)->search(
     {
@@ -241,31 +194,35 @@ sub _subtotal{
   $subtotal;
 }
 
-
 sub _place_order{
-  my ($dsl, $name, $schema) = @_;
-  my $cart = _cart($dsl,$name,$schema);
-  my $cart_temp = $dsl->schema($schema)->resultset($cart_name)->search( { id => $cart->{id} } )->single;
+  my ($dsl, $params) = @_;
+  my ($name, $schema) = parse_params($params);
+  my $cart = _cart($dsl,{ name => $name, schema => $schema });
+  my $cart_temp = $dsl->schema($schema)->resultset($cart_name)->find($cart->{id});
+  return { error => 'Cart not found' } unless $cart_temp;
   $cart_temp->update({
     status => 1,
     session => $dsl->session->{id}."_1",
     log => $dsl->to_json( {
       data => $dsl->session->{data},
-      session => $cart_temp->id,
-      products => _cart_products( $dsl, $schema ),
-      subtotal => _subtotal( $dsl, $schema ) },
+      session => $dsl->session->{id},
+      products => cart_product_info( $dsl, 
+        { 
+          cart_id => _cart($dsl,{ name => $name, schema => $schema } )->{id}, 
+          schema => $schema 
+        } 
+      ),
+      subtotal => _subtotal( $dsl, { name => $name, schema => $schema } ) },
     ),
   });
   $cart_temp->id;
 }
 
-sub _parse_params {
+sub parse_params {
   my ($params) = @_;
-  return ($params->{name}, $params->{schema});
+  return ($params->{name}, $params->{schema}, $params->{status}, $params->{cart_id});
 }
 
 register_plugin;
 1;
 __END__
-
-

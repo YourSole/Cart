@@ -27,7 +27,7 @@ t::lib::TestApp1::set plugins => {
     'Cart' => {
       product_name => 'EcProduct',
       product_filter => "{ name => { 'like', '%SU0%'} }",
-      product_order => "{ -asc => 'name' }",
+      product_order => "{ -asc => 'sku' }",
     },
     DBIC => {
         foo => {
@@ -58,7 +58,6 @@ my @sql = (
   'id'  INTEGER PRIMARY KEY AUTOINCREMENT,
   'name'  TEXT NOT NULL,
   'session' TEXT NOT NULL,
-  'user_id' INTEGER,
   'status'  INTEGER NOT NULL DEFAULT '0',
   'log' TEXT
 );",
