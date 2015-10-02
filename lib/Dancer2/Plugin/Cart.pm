@@ -66,40 +66,39 @@ sub _cart {
     $cart = $dsl->schema($schema)->resultset($cart_name)->search($cart_info)->first;
   }
   $params->{cart_id} = $cart->id;
-  my $cart_product_info = cart_product_info ( $dsl, $params );
-  return { $cart->get_columns, products => $cart_product_info->{products}, subtotal => $cart_product_info->{subtotal} } if $cart;
+  my $cart_items = cart_items ( $dsl, $params );
+  return { $cart->get_columns, items => $cart_items->{items} , subtotal => $cart_items->{subtotal} } if $cart;
 };
 
-sub cart_product_info {
+sub cart_items {
   my ($dsl, $params ) = @_;
   my ($name, $schema, $status, $cart_id ) = parse_params($params);
 
   my $arr = [];
-  my $cart_products = $dsl->schema($schema)->resultset($cart_product_name)->search( 
+  my $cart_items = $dsl->schema($schema)->resultset($cart_product_name)->search( 
     { 
       cart_id => $cart_id,
     },
   );
   my $subtotal = 0;
-  while( my $cp = $cart_products->next ){
-    my $product =  $dsl->schema->resultset($product_name)->search({ $product_pk => $cp->sku })->single;
-    $subtotal += $cp->price * $cp->quantity;
-    push @{$arr}, {$product->get_columns, ec_quantity => $cp->quantity, ec_price  => $cp->price };
+  while( my $ci = $cart_items->next ){
+    my $product =  $dsl->schema->resultset($product_name)->search({ $product_pk => $ci->sku })->single;
+    $subtotal += $ci->price * $ci->quantity;
+    push @{$arr}, {$product->get_columns, ec_quantity => $ci->quantity, ec_price  => $ci->price };
   }
-  return { products => $arr , subtotal => $subtotal };
+  return { items => $arr , subtotal => $subtotal };
 };
 
 sub _cart_add {
   my ($dsl , $product, $params) = @_;
   $load_settings->();
-
   my ($name, $schema) = parse_params($params);
 
   my $product_info = get_product_info($dsl, $product, { schema => $schema } );
   return $product_info if $product_info->{error};
-  my $cart_product = cart_add_product($dsl, $product_info, $product->{quantity}, $params);
-  return $cart_product if $cart_product->{error};
-  return $cart_product;
+
+  my $cart_item = cart_add_product($dsl, $product_info, $product->{quantity}, $params);
+  return $cart_item;
 };
 
 sub _products {
@@ -188,8 +187,8 @@ sub _subtotal{
       cart_id => _cart($dsl,$name,$schema)->{id},
     },
   );
-  while( my $cp = $cart_products->next ){
-    $subtotal += $cp->price * $cp->quantity;
+  while( my $ci = $cart_products->next ){
+    $subtotal += $ci->price * $ci->quantity;
   }
   $subtotal;
 }
@@ -206,7 +205,7 @@ sub _place_order{
     log => $dsl->to_json( {
       data => $dsl->session->{data},
       session => $dsl->session->{id},
-      products => cart_product_info( $dsl, 
+      items => cart_items( $dsl, 
         { 
           cart_id => _cart($dsl,{ name => $name, schema => $schema } )->{id}, 
           schema => $schema 

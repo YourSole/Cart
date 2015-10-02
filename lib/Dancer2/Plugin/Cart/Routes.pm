@@ -31,7 +31,7 @@ get '/cart' => sub {
   my $cart = cart;
   my $page = "<h1>Cart</h1>";
 
-  if (@{$cart->{products}} > 0 ) {
+  if (@{$cart->{items}} > 0 ) {
     $page .= "<a href='products'> Continue shopping. </a>";
     $page .= "<table><tr><th>SKU</th><th></th><th>Quantity</th><th></th><th>Price</th></tr>\n";
     map{
@@ -45,7 +45,7 @@ get '/cart' => sub {
         <input type='hidden' name='quantity' value='1'>
         <input type='submit' value = '+1'>
       </form></td><td>".$_->{ec_price}."</td></tr>\n";
-    } @{$cart->{products}};
+    } @{$cart->{items}};
     $page .= "<tr><td colspan=4>Subtotal</td><td>".subtotal."</td></tr>";
     $page .= "</table>";
     $page .= "<p><a href='cart/clear'> Clear your cart. </a></p>";
@@ -68,7 +68,7 @@ get '/cart/checkout' => sub {
   my $page = "<h1>Cart info</h1>";
 
   $page .= "<table><tr><th>SKU</th><th>Quantity</th><th>Price</th></tr>";
-  map{ $page .= "<tr><td>".$_->{$product_pk}."</td><td>". $_->{ec_quantity} ."</td><td>".$_->{ec_price}."</td></tr>"; } @{$cart->{products}};
+  map{ $page .= "<tr><td>".$_->{$product_pk}."</td><td>". $_->{ec_quantity} ."</td><td>".$_->{ec_price}."</td></tr>"; } @{$cart->{items}};
   $page .= "<tr><td colspan=2>Subtotal</td><td>".subtotal."</td></tr>";
   $page .= "</table>";
 
@@ -112,10 +112,13 @@ get '/cart/receipt' => sub {
   my $page = "<p>Checkout has been successful!!</p>";
   my $cart = cart( { status => 1, cart_id => session->read( 'cart_id' ) } );
   session->delete('cart_id');
-
   $page .= "<h1>Cart info</h1>";
   $page .= "<table><tr><th>SKU</th><th>Quantity</th><th>Price</th></tr>";
-  map{ $page .= "<tr><td>".$_->{$product_pk}."</td><td>". $_->{ec_quantity} ."</td><td>".$_->{ec_price}."</td></tr>"; } @{$cart->{products}};
+
+  foreach my $item ( @{ $cart->{items} } ){
+    $page .= "<tr><td>".$item->{$product_pk}."</td><td>". $item->{ec_quantity} ."</td><td>".$item->{ec_price}."</td></tr>"; 
+  }
+  
   $page .= "<tr><td colspan=2>Subtotal</td><td>".$cart->{subtotal}."</td></tr>";
   $page .= "</table>";
 
@@ -126,6 +129,7 @@ get '/cart/receipt' => sub {
   $page .= "<tr><td>Cart status:</td><td>". $status."</td></tr>";
   $page .= "</table>";
   $page .= "<p><a href='../products'> Product index </a></p>";
+  $page;  
 };
 
 1;
