@@ -4,8 +4,10 @@ my $product_pk = undef;
 $product_name = app->config->{'plugins'}->{'Cart'}->{product_name} || 'EcProduct';
 $product_pk = app->config->{'plugins'}->{'Cart'}->{product_pk} || 'sku';
 $product_price_f = app->config->{'plugins'}->{'Cart'}->{product_price_f} || 'sellprice';
+$products_view_template = app->config->{'plugins'}->{'Cart'}->{views}->{products} || undef;
 $cart_view_template = app->config->{'plugins'}->{'Cart'}->{views}->{cart} || undef;
 $cart_receipt_template = app->config->{'plugins'}->{'Cart'}->{views}->{receipt} || undef;
+$cart_checkout_template = app->config->{'plugins'}->{'Cart'}->{views}->{checkout} || undef;
 
 get '/products' => sub {
   my $template = $products_view_template || '/products.tt' ;
