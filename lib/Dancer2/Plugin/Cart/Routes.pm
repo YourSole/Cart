@@ -1,3 +1,5 @@
+use Dancer2::Plugin::Email;
+
 my $product_name = undef;
 my $product_pk = undef;
 
@@ -99,28 +101,22 @@ get '/cart/receipt' => sub {
   else{
     $page = _cart_receipt({ cart => $cart });
   }
-
   #Send email if it has been configured
-  eval "use Dancer2::Plugin::Email";
-  $can_email = 1 unless $@;
-  if($can_email){
-    use Dancer2::Plugin::Email;
-    use Try::Tiny;
-    if ($mail_sender_account && $mail_logger_account ){
-      try{
-        email {
-          from    => $mail_sender_account,
-          to      => from_json( $cart->{log} )->{data}->{email},
-          cc     => $mail_logger_account,
-          subject => 'Receipt #'.$cart->{id},
-          body    =>  $page,
-          type    => 'html',
-        };
-      }
-      catch{
-        error "Could not send email: $_";
+  use Try::Tiny;
+  if ($mail_sender_account && $mail_logger_account ){
+    try{
+      email {
+        from    => $mail_sender_account,
+        to      => from_json( $cart->{log} )->{data}->{email},
+        cc     => $mail_logger_account,
+        subject => 'Receipt #'.$cart->{id},
+        body    =>  $page,
+        type    => 'html',
       };
     }
+    catch{
+      error "Could not send email: $_";
+    };
   }
   $page .= "<p><a href='../products'> Product index </a></p>";
   $page;
