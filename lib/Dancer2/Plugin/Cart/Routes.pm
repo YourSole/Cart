@@ -70,15 +70,21 @@ post '/cart/checkout' => sub {
 };
 
 get '/cart/receipt' => sub {
+
+  redirect '/products' unless session->read( 'cart_id' ); 
+
   my $cart = cart( { status => 1, cart_id => session->read( 'cart_id' ) } );
   my $template = $cart_receipt_template || '/cart/receipt.tt' ;
   session->delete('cart_id');
+
+  my $page = "";
   if( -e config->{views}.$template ){
-    template $template, { cart => $cart };
+    $page = template $template, { cart => $cart };
   }
   else{
-     _cart_receipt({ cart => $cart });
+    $page = _cart_receipt({ cart => $cart });
   }
+  $page;
 };
 
 sub _products_view{
