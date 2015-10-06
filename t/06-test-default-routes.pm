@@ -187,16 +187,10 @@ subtest 'checkout process' => sub {
     $res->content, qr/Complete/,'cart completed.'
   );
   like(
-    $res->content, qr/"session":/,'Have session title on cart log.'
+    $res->content, qr/20/,'Get the subtotal on log info.'
   );
   like(
-    $res->content, qr/"subtotal":20/,'Get the subtotal on log info.'
-  );
-  like(
-    $res->content, qr/"ec_quantity":2/,'Get the quantity on log info.'
-  );
-  like(
-    $res->content, qr/"email":"email\@domain.com"/,'Get session data on log info.'
+    $res->content, qr/email\@domain.com/,'Get session data on log info.'
   );
 };
 

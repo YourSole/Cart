@@ -196,9 +196,13 @@ sub _subtotal{
 sub _place_order{
   my ($dsl, $params) = @_;
   my ($name, $schema) = parse_params($params);
+
   my $cart = _cart($dsl,{ name => $name, schema => $schema });
+  return { error => 'Cart without items' } unless @{$cart->{items}} > 0;
+
   my $cart_temp = $dsl->schema($schema)->resultset($cart_name)->find($cart->{id});
   return { error => 'Cart not found' } unless $cart_temp;
+
   $cart_temp->update({
     status => 1,
     session => $dsl->session->{id}."_1",

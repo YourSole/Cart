@@ -8,6 +8,12 @@ $products_view_template = app->config->{'plugins'}->{'Cart'}->{views}->{products
 $cart_view_template = app->config->{'plugins'}->{'Cart'}->{views}->{cart} || undef;
 $cart_receipt_template = app->config->{'plugins'}->{'Cart'}->{views}->{receipt} || undef;
 $cart_checkout_template = app->config->{'plugins'}->{'Cart'}->{views}->{checkout} || undef;
+$mail_sender_account  = undef;
+$mail_logger_account = undef;
+if(app->config->{'plugins'}->{'Cart'}->{email}){
+  $mail_sender_account = app->config->{'plugins'}->{'Cart'}->{email}->{logger};
+  $mail_logger_account = app->config->{'plugins'}->{'Cart'}->{email}->{sender};
+}
 
 get '/products' => sub {
   my $template = $products_view_template || '/products.tt' ;
@@ -43,6 +49,7 @@ get '/cart/clear' => sub {
 
 get '/cart/checkout' => sub {
   my $cart = cart;
+  redirect '/products' unless @{$cart->{items}} > 0;
   my $template = $cart_checkout_template || '/cart/checkout.tt' ;
   if( -e config->{views}.$template ){
     template $template, { cart => $cart };
@@ -66,7 +73,15 @@ post '/cart/checkout' => sub {
   session->write('cart_id', place_order);
   #Clear form variables and private info
   session->delete('email');
-  redirect '/cart/receipt'
+  
+  if( session->read('cart_id')->{error} ){
+    session->write('error', session->read('cart_id')->{error} );
+    session->delete('cart_id');
+    redirect '/cart/checkout';
+  }
+  else{
+    redirect '/cart/receipt';
+  }
 };
 
 get '/cart/receipt' => sub {
@@ -84,6 +99,30 @@ get '/cart/receipt' => sub {
   else{
     $page = _cart_receipt({ cart => $cart });
   }
+
+  #Send email if it has been configured
+  eval "use Dancer2::Plugin::Email";
+  $can_email = 1 unless $@;
+  if($can_email){
+    use Dancer2::Plugin::Email;
+    use Try::Tiny;
+    if ($mail_sender_account && $mail_logger_account ){
+      try{
+        email {
+          from    => $mail_sender_account,
+          to      => from_json( $cart->{log} )->{data}->{email},
+          cc     => $mail_logger_account,
+          subject => 'Receipt #'.$cart->{id},
+          body    =>  $page,
+          type    => 'html',
+        };
+      }
+      catch{
+        error "Could not send email: $_";
+      };
+    }
+  }
+  $page .= "<p><a href='../products'> Product index </a></p>";
   $page;
 };
 
@@ -171,14 +210,58 @@ sub _cart_view{
   $page;
 }
 
+sub _cart_checkout{
+  my ($params) = @_;
+  my $cart = $params->{cart};
+  my $page ="";
+
+  $page .= "
+
+  <h1>Cart info</h1>
+  <h2>Receipt: ".$cart->{id}."</h2>";
+  
+  $page .= "
+  <table>
+    <tr>
+      <th>SKU</th><th>Quantity</th><th>Price</th>
+    </tr>";
+  foreach my $item ( @{$cart->{items}} ){ 
+  $page .= "
+    <tr>
+      <td>".$item->{$product_pk}."</td>
+      <td>". $item->{ec_quantity} ."</td>
+      <td>".$item->{ec_price}."</td>
+    </tr>"; 
+  };
+  $page .= "
+    <tr>
+      <td colspan=2>Subtotal</td><td>".$cart->{subtotal}."</td>
+    </tr>
+  </table>";
+
+
+  if (  session->read('error') ){
+    $page .= "<p>".session('error')."</p>";
+    session->delete('error');
+  }
+  $page .= "
+    <p>Info required to check out:</p>
+    <form method='post' action='checkout'>
+     Email <input type='text' name='email' value='".param('email')."' paceholder='email\@domain.com'>
+      <input type='submit' value = 'Process checkout'>
+    </form>";
+}
+
 sub _cart_receipt{
   my ($params) = @_;
   my $page = "";
   my $cart =  $params->{cart};
+  my $log = from_json($cart->{log});
 
   $page .= "
   <p>Checkout has been successful!!</p>
-  <h1>Cart info</h1>
+  <h1>Receipt #: ".$cart->{id}." </h1>
+  <h2>Cart Info</h2>
   <table>
     <thead>
       <tr>
@@ -202,41 +285,14 @@ sub _cart_receipt{
       </tr>
     </tfoot>
   </table>
-  <h1>Log Info</h1>";
+  <h2>Log Info</h2>";
   my $status = $cart->{status} == '0' ? 'Incomplete' : 'Complete';
   $page .= "
   <table>
-    <tr><td>Cart logged info: </td><td>". $cart->{log} ."</td></tr>
     <tr><td>Cart status:</td><td>". $status."</td></tr>
-  </table>
-  <p><a href='../products'> Product index </a></p>";
+    <tr><td>Email</td><td>".$log->{data}->{email}."</td>
+  </table>";
   $page;  
 };
 
-sub _cart_checkout{
-  my ($params) = @_;
-  my $cart = $params->{cart};
-  my $page ="";
-
-  $page .= "<h1>Cart info</h1>\n";
-
-  $page .= "<table><tr><th>SKU</th><th>Quantity</th><th>Price</th></tr>";
-  map{ $page .= "<tr><td>".$_->{$product_pk}."</td><td>". $_->{ec_quantity} ."</td><td>".$_->{ec_price}."</td></tr>"; } @{$cart->{items}};
-  $page .= "<tr><td colspan=2>Subtotal</td><td>".subtotal."</td></tr>";
-  $page .= "</table>";
-
-
-  if (  session->read('error') ){
-    $page .= "<p>".session('error')."</p>";
-    session->delete('error');
-  }
-  $page .= "<p>Info required to check out:</p>
-    <form method='post' action='checkout'>
-    Email <input type='text' name='email' value='".param('email')."' paceholder='email\@domain.com'>
-    <input type='submit' value = 'Process checkout'>
-    </form>";
-}
 1;
-
-
-
