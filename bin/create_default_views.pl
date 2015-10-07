@@ -93,7 +93,7 @@ sub create_cart_view{
         <tr>
           <td>  $open_t item.$product_pk $close_t </td>
           <td><form method='post' action='cart/add'>
-            <input type='hidden' name='sku' value=' $open_t item.$product_pk $close_t'>
+            <input type='hidden' name='sku' value='$open_t item.$product_pk $close_t'>
             <input type='hidden' name='quantity' value='-1'>
             <input type='submit' value = '-1'>
             </form>
