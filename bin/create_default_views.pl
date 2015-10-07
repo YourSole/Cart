@@ -79,8 +79,9 @@ sub create_cart_view{
   my ($product_pk) = @_;
   my $page = "";
   $page .=  "<h1>Cart</h1>
-  $open_t IF cart.items $close_t";
+  $open_t IF cart.items.size $close_t";
     $page .= "<a href='products'> Continue shopping. </a>\n";
+
     $page .= "
     <table>
       <thead>
