@@ -39,7 +39,7 @@ get '/cart/products' => sub {
 get '/cart/clear_cart/:schema?' => sub {
   my $schema = param('schema');
   clear_cart( { name => 'main' , schema => $schema } );
-  Dumper(products($schema));
+  Dumper(cart({ schema => $schema})->{items});
 };
 
 get '/cart/subtotal' => sub {
