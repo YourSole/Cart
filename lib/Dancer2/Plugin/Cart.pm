@@ -103,12 +103,18 @@ sub _cart_add {
 
 sub _products {
   my ($dsl, $schema) = @_;
-
   my $product_filter_eval = $product_filter ? eval $product_filter : {};
   my $product_order_eval  = $product_order ? { order_by => { eval $product_order } } : {};
-  
-  my @products = $dsl->schema($schema)->resultset($product_name)->search( $product_filter_eval , $product_order_eval );
-  @products;
+
+  my $arr = [];
+
+  my $products = $dsl->schema($schema)->resultset($product_name)->search( $product_filter_eval , $product_order_eval );
+
+  while( my $product = $products->next ){
+    push @{$arr}, { $product->get_columns }
+  }
+
+  $arr;
 }
 
 sub get_product_info {

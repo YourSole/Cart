@@ -20,10 +20,13 @@ if(app->config->{'plugins'}->{'Cart'}->{email}){
 get '/products' => sub {
   my $template = $products_view_template || '/products.tt' ;
   if( -e config->{views}.$template ) {
-    template $template;
+    my @products = products;
+    template $template, {
+      products => products
+    };
   }
   else{
-     _products_view();
+     _products_view({ products => products });
   }
 };
 
@@ -37,7 +40,9 @@ get '/cart' => sub {
   my $cart = cart;
   my $template = $cart_view_template || '/cart/cart.tt' ;
   if( -e config->{views}.$template ) {
-    template $template, { cart => $cart };
+    template $template, {
+      cart => $cart
+    };
   }
   else{
      _cart_view({ cart => $cart });
@@ -53,12 +58,19 @@ get '/cart/checkout' => sub {
   my $cart = cart;
   redirect '/products' unless @{$cart->{items}} > 0;
   my $template = $cart_checkout_template || '/cart/checkout.tt' ;
+
+  my $page = "";
   if( -e config->{views}.$template ){
-    template $template, { cart => $cart };
+    $page = template $template, {
+      cart => $cart,
+      error => session->read('error'),
+     };
+    session->delete('error');
   }
   else{
-     _cart_checkout({ cart => $cart });
+     $page = _cart_checkout({ cart => $cart });
   }
+  $page;
 };
 
 post '/cart/checkout' => sub {
@@ -88,19 +100,24 @@ post '/cart/checkout' => sub {
 
 get '/cart/receipt' => sub {
 
-  redirect '/products' unless session->read( 'cart_id' ); 
+  redirect '/products' unless session->read( 'cart_id' );
 
   my $cart = cart( { status => 1, cart_id => session->read( 'cart_id' ) } );
   my $template = $cart_receipt_template || '/cart/receipt.tt' ;
   session->delete('cart_id');
 
   my $page = "";
+  $cart->{status} = $cart->{status} ? 'Complete' : 'Incomplete';
   if( -e config->{views}.$template ){
-    $page = template $template, { cart => $cart };
+    $page = template $template, {
+      cart => $cart,
+      log => from_json($cart->{log}),
+    };
   }
   else{
     $page = _cart_receipt({ cart => $cart });
   }
+
   #Send email if it has been configured
   use Try::Tiny;
   if ($mail_sender_account && $mail_logger_account ){
@@ -124,6 +141,7 @@ get '/cart/receipt' => sub {
 
 sub _products_view{
   my ($params) = @_;
+  my $products = $params->{products};
   my $page ="";
   $page .= "
   <h1>Product list</h1>
@@ -134,14 +152,13 @@ sub _products_view{
       </tr>
     </thead>
     <tbody>";
-  my @products = products;
-  foreach my $product (products) {
+  foreach my $product (@{$products}) {
     $page .= "
       <tr>
-        <td>".$product->$product_pk."</td>
+        <td>".$product->{$product_pk}."</td>
         <td>
           <form method='post' action='cart/add'>
-            <input type='hidden' name='sku' value='".$product->$product_pk."'>
+            <input type='hidden' name='sku' value='".$product->{$product_pk}."'>
             <input type='hidden' name='quantity' value='1'>
             <input type='submit' value = 'Add'>
           </form>
@@ -212,11 +229,8 @@ sub _cart_checkout{
   my $page ="";
 
   $page .= "
-
-  <h1>Cart info</h1>
-  <h2>Receipt: ".$cart->{id}."</h2>";
-  
-  $page .= "
+  <h1>Checkout process</h1>
+  <h2>Cart info</h2>
   <table>
     <tr>
       <th>SKU</th><th>Quantity</th><th>Price</th>
@@ -234,7 +248,6 @@ sub _cart_checkout{
       <td colspan=2>Subtotal</td><td>".$cart->{subtotal}."</td>
     </tr>
   </table>";
-
 
   if (  session->read('error') ){
     $page .= "<p>".session('error')."</p>";
@@ -281,11 +294,9 @@ sub _cart_receipt{
       </tr>
     </tfoot>
   </table>
-  <h2>Log Info</h2>";
-  my $status = $cart->{status} == '0' ? 'Incomplete' : 'Complete';
-  $page .= "
+  <h2>Log Info</h2>
   <table>
-    <tr><td>Cart status:</td><td>". $status."</td></tr>
+    <tr><td>Cart status:</td><td>".$cart->{status}."</td></tr>
     <tr><td>Email</td><td>".$log->{data}->{email}."</td>
   </table>";
   $page;  
