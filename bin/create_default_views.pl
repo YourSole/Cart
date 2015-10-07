@@ -119,7 +119,7 @@ sub create_cart_view{
     <p><a href='cart/clear'> Clear your cart. </a></p>
     <p><a href='cart/checkout'> Checkout. </a></p>
   $open_t ELSE $close_t
-    Your cart is empty. <a href='products'> Continue shopping. </a>
+    <p>Your cart is empty. <a href='products'> Continue shopping. </a></p>
   $open_t END $close_t";
   create_view( 'cart/cart.tt', $page );
   return 1;
