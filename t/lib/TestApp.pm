@@ -9,6 +9,11 @@ get '/' => sub {
   'Hello World'
 };
 
+get '/cart/new/' => sub {
+  my $cart = cart;
+  $cart->{name};
+};
+
 get '/cart/new/:cart_new?' => sub {
   my ($cart_name) = param('cart_new'); 
   my $cart = cart( { name => $cart_name } ); 
@@ -33,6 +38,11 @@ post '/cart/add_product_bar' => sub {
 };
 
 get '/cart/products' => sub {
+  Dumper(cart->{items});
+};
+
+get '/cart/clear_cart/' => sub {
+  clear_cart;
   Dumper(cart->{items});
 };
 
