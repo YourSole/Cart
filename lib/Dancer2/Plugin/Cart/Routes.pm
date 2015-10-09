@@ -135,4 +135,16 @@ get '/cart/receipt' => sub {
   $page .= "<p><a href='../products'> Product index </a></p>";
   $page;
 };
+
+get '/cart/shipping' => sub {
+
+};
+
+get '/cart/billing' => sub {
+
+};
+
+get '/cart/review' => sub {
+
+};
 1;

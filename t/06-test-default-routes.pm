@@ -150,6 +150,41 @@ subtest 'Products sort and filtered' => sub {
   );
 };
 
+subtest 'Shipping info' => sub {
+  my $req = GET $site.'/cart/shipping';
+  $jar->add_cookie_header( $req );
+  my $res = $test->request ( $req );
+  is(
+    $res->{_rc}, '200','Get content /cart/shipping'
+  );
+};
+
+subtest 'Billing info' => sub {
+  my $req = GET $site.'/cart/billing';
+  $jar->add_cookie_header( $req );
+  my $res = $test->request ( $req );
+  is(
+    $res->{_rc}, '200','Get content /cart/billing'
+  );
+};
+
+subtest 'Review info' => sub {
+  my $req = GET $site.'/cart/review';
+  $jar->add_cookie_header( $req );
+  my $res = $test->request ( $req );
+  is(
+    $res->{_rc}, '200','Get content /cart/review'
+  );
+};
+
+subtest 'Place order' => sub {
+  my $req = GET $site.'/cart/review';
+  $jar->add_cookie_header( $req );
+  my $res = $test->request ( $req );
+  is(
+    $res->{_rc}, '200','Get content /cart/review'
+  );
+};
 
 subtest 'checkout process' => sub {
   my $req = GET $site .'/cart/checkout';
