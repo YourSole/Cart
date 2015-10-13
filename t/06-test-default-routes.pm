@@ -157,7 +157,16 @@ subtest 'Shipping info' => sub {
   is(
     $res->{_rc}, '200','Get content /cart/shipping'
   );
+
+  $req = POST $site.'/cart/shipping'; $res = $test->request ( $req ); is( $res->{_rc}, '302','Get content /cart/shipping');
+
+  $req = POST $site.'/cart/shipping', [ 'ship_mode' => "0" ];
+  $res = $test->request ( $req );
+  is(
+    $res->{_rc}, '302','Validation redirects to Billing Info'
+  );
 };
+
 
 subtest 'Billing info' => sub {
   my $req = GET $site.'/cart/billing';

@@ -2,13 +2,13 @@ use Dancer2::Plugin::Email;
 use Dancer2::Plugin::Cart::InlineViews;
 
 my $product_pk = app->config->{'plugins'}->{'Cart'}->{product_pk} || 'sku';
+my $shipping_sku = app->config->{'plugins'}->{'Cart'}->{shipping_sku} || 'SHIPPING';
 my $products_view_template = app->config->{'plugins'}->{'Cart'}->{views}->{products} || undef;
 my $cart_view_template = app->config->{'plugins'}->{'Cart'}->{views}->{cart} || undef;
 my $cart_receipt_template = app->config->{'plugins'}->{'Cart'}->{views}->{receipt} || undef;
 my $cart_checkout_template = app->config->{'plugins'}->{'Cart'}->{views}->{checkout} || undef;
 my $mail_sender_account  = undef;
 my $mail_logger_account = undef;
-
 if(app->config->{'plugins'}->{'Cart'}->{email}){
   $mail_sender_account = app->config->{'plugins'}->{'Cart'}->{email}->{logger};
   $mail_logger_account = app->config->{'plugins'}->{'Cart'}->{email}->{sender};
@@ -137,8 +137,25 @@ get '/cart/receipt' => sub {
 };
 
 get '/cart/shipping' => sub {
-
+  my $cart = cart;
+  my $template = $shipping_view_template || '/cart/shipping.tt' ;
+  if( -e config->{views}.$template ) {
+    template $template, {
+      cart => $cart
+    };
+  }
+  else{
+     _cart_view({ cart => $cart, product_pk => $product_pk });
+  }
 };
+
+post '/cart/shipping' => sub{
+  redirect '/cart/shipping' unless param('ship_mode') || param('ship_mode') != "";
+  my $product = { sku => $shipping_sku, quantity => 1 };
+  my $res = cart_add($product);
+  redirect '/cart/billing';
+};
+
 
 get '/cart/billing' => sub {
 
