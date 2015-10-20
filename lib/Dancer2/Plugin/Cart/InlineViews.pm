@@ -1,7 +1,6 @@
 sub _products_view{
   my ($params) = @_;
   my $products = $params->{products};
-  my $product_pk = $params->{product_pk};
   my $page ="";
   $page .= "
   <h1>Product list</h1>
@@ -15,10 +14,10 @@ sub _products_view{
   foreach my $product (@{$products}) {
     $page .= "
       <tr>
-        <td>".$product->{$product_pk}."</td>
+        <td>".$product->{ec_sku}."</td>
         <td>
           <form method='post' action='cart/add'>
-            <input type='hidden' name='sku' value='".$product->{$product_pk}."'>
+            <input type='hidden' name='sku' value='".$product->{ec_sku}."'>
             <input type='hidden' name='quantity' value='1'>
             <input type='submit' value = 'Add'>
           </form>
@@ -35,7 +34,6 @@ sub _cart_view{
   my ($params) = @_;
   my $page = "";
   my $cart = $params->{cart};
-  my $product_pk = $params->{product_pk};
   $page .=  "<h1>Cart</h1>\n";
   if (@{$cart->{items}} > 0 ) {
     $page .= "<a href='products'> Continue shopping. </a>\n";
@@ -50,16 +48,16 @@ sub _cart_view{
     foreach my $item (@{$cart->{items}}){
       $page .= "
         <tr>
-          <td>".$item->{$product_pk}."</td>
+          <td>".$item->{ec_sku}."</td>
           <td><form method='post' action='cart/add'>
-            <input type='hidden' name='sku' value='".$item->{$product_pk}."'>
+            <input type='hidden' name='sku' value='".$item->{ec_sku}."'>
             <input type='hidden' name='quantity' value='-1'>
             <input type='submit' value = '-1'>
             </form>
           </td>
           <td>". $item->{ec_quantity} ."</td>
           <td><form method='post' action='cart/add'>
-            <input type='hidden' name='sku' value='".$item->{$product_pk}."'>
+            <input type='hidden' name='sku' value='".$item->{ec_sku}."'>
             <input type='hidden' name='quantity' value='1'>
             <input type='submit' value = '+1'>
             </form>
@@ -76,7 +74,7 @@ sub _cart_view{
       </tfoot>
     </table>";
     $page .= "\n<p><a href='cart/clear'> Clear your cart. </a></p>";
-    $page .= "\n<p><a href='cart/checkout'> Checkout. </a></p>";
+    $page .= "\n<p><a href='cart/shipping'> Checkout. </a></p>";
   }
   else{
     $page .= "Your cart is empty. <a href='products'> Continue shopping. </a>";
@@ -84,13 +82,16 @@ sub _cart_view{
   $page;
 }
 
-sub _cart_checkout{
+
+sub _shipping_view{
   my ($params) = @_;
   my $cart = $params->{cart};
+  my $ec_cart = $params->{ec_cart};
+
   my $page ="";
 
   $page .= "
-  <h1>Checkout process</h1>
+  <h1>Shipping</h1>
   <h2>Cart info</h2>
   <table>
     <tr>
@@ -99,34 +100,96 @@ sub _cart_checkout{
   foreach my $item ( @{$cart->{items}} ){ 
   $page .= "
     <tr>
-      <td>".$item->{$product_pk}."</td>
+      <td>".$item->{ec_sku}."</td>
       <td>". $item->{ec_quantity} ."</td>
       <td>".$item->{ec_price}."</td>
     </tr>"; 
   };
   $page .= "
     <tr>
-      <td colspan=2>Subtotal</td><td>".$cart->{subtotal}."</td>
+      <td>Subtotal</td><td>".$cart->{subtotal}."</td>
     </tr>
-  </table>";
+  </table>
+  <p> <a href='../products'>Continue shopping</a> </p>";
 
-  if (  session->read('error') ){
-    $page .= "<p>".session('error')."</p>";
-    session->delete('error');
+  
+  if ( $ec_cart->{shipping}->{error} ){
+    $page .= "<p>".$ec_cart->{shipping}->{error}."</p>";
   }
   $page .= "
-    <p>Info required to check out:</p>
-    <form method='post' action='checkout'>
-     Email <input type='text' name='email' value='".param('email')."' paceholder='email\@domain.com'>
-      <input type='submit' value = 'Process checkout'>
+    <p>Shipping info</p>
+    <form method='post' action='shipping'>
+     Email <input type='text' name='email' value='".$ec_cart->{shipping}->{form}->{email}."' paceholder='email\@domain.com'>
+      <input type='submit' value = 'Continue'>
     </form>";
 }
 
-sub _cart_receipt{
+sub _billing_view{
   my ($params) = @_;
+  my $cart = $params->{cart};
+  my $ec_cart = $params->{ec_cart};
+
+  my $page ="";
+
+  $page .= "
+  <h1>Billing</h1>";
+  if ( $ec_cart->{billing}->{error} ){
+    $page .= "<p>".$ec_cart->{billing}->{error}."</p>";
+  }
+  $page .= "
+    <p>Billing info</p>
+    <form method='post' action='billing'>
+     Email <input type='text' name='email' value='".$ec_cart->{billing}->{form}->{email}."' paceholder='email\@domain.com'>
+      <input type='submit' value = 'Continue'>
+    </form>";
+
+};
+
+sub _review_view{
+  my ($params) = @_;
+  my $cart = $params->{cart};
+  my $ec_cart = $params->{ec_cart};
+
+  $page = "
+    <h1>Review</h1>
+    <h2>Cart info</h2>
+    <table>
+      <tr>
+        <th>SKU</th><th>Quantity</th><th>Price</th>
+      </tr>";
+      foreach my $item ( @{$cart->{items}} ){ 
+      $page .= "
+        <tr>
+          <td>".$item->{ec_sku}."</td>
+          <td>". $item->{ec_quantity} ."</td>
+          <td>".$item->{ec_price}."</td>
+        </tr>"; 
+      };
+      $page .= "
+      <tr>
+        <td colspan=2>Subtotal</td><td>".$cart->{subtotal}."</td>
+      </tr>
+    </table>
+    
+    <p> <a href='../products'>Continue shopping</a> </p>
+
+    <table>
+      <tr><td>Shipping - email</td><td>".$ec_cart->{shipping}->{form}->{email}."</td></tr>
+      <tr><td>Billing - email</td><td>".$ec_cart->{billing}->{form}->{email}."</td></tr>
+    </table>
+    <p>Edit <a href='shipping'>Shipping</a></p>
+    <p>Edit <a href='billing'>Billing</a></p>
+    <form method='post' action='checkout'>
+    <input type='submit' value = 'Place Order'>
+    </form>";
+  
+};
+
+
+sub _receipt_view{
+  my ($params) = @_;
+  my $cart = $params->{cart};
   my $page = "";
-  my $cart =  $params->{cart};
-  my $log = from_json($cart->{log});
 
   $page .= "
   <p>Checkout has been successful!!</p>
@@ -142,7 +205,7 @@ sub _cart_receipt{
   foreach my $item ( @{ $cart->{items} } ){
     $page .= "
       <tr>
-        <td>".$item->{$product_pk}."</td>
+        <td>".$item->{ec_sku}."</td>
         <td>". $item->{ec_quantity} ."</td>
         <td>".$item->{ec_price}."</td>
       </tr>";
@@ -158,8 +221,10 @@ sub _cart_receipt{
   <h2>Log Info</h2>
   <table>
     <tr><td>Cart status:</td><td>".$cart->{status}."</td></tr>
-    <tr><td>Email</td><td>".$log->{data}->{email}."</td>
-  </table>";
+    <tr><td>Email</td><td>".$cart->{log}->{data}->{ec_cart}->{shipping}->{form}->{email}."</td>
+  </table>
+  <p> <a href='../products'>Go to products</a> </p>";
   $page;  
 };
+
 1;

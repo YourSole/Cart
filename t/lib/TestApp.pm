@@ -1,7 +1,6 @@
 package t::lib::TestApp;
 
 use Dancer2;
-use Dancer2::Plugin::DBIC qw(schema resultset);
 use Dancer2::Plugin::Cart;
 use Data::Dumper;
 
@@ -21,18 +20,13 @@ get '/cart/new/:cart_new?' => sub {
 };
 
 post '/cart/add_product' => sub {
-  my $product = { sku => param('sku'), quantity => param('quantity') };
+  my $product = { ec_sku => param('ec_sku'), ec_quantity => param('ec_quantity') };
   my $res = cart_add($product);
   $res->{error} ? $res->{error} : Dumper($res);
 };
 
-get '/cart/quantity/:schema?' => sub {
-  my $schema = param('schema');
-  'quantity='.product_quantity({ schema => $schema });
-};
-
 post '/cart/add_product_bar' => sub {
-  my $product = { sku => param('sku'), quantity => param('quantity') };
+  my $product = { ec_sku => param('ec_sku'), ec_quantity => param('ec_quantity') };
   my $res = cart_add($product, { schema => 'bar' });
   $res->{error} ? $res->{error} : Dumper($res);
 };
@@ -46,6 +40,11 @@ get '/cart/clear_cart/' => sub {
   Dumper(cart->{items});
 };
 
+get '/cart/:schema?' => sub {
+  my $schema = param('schema');
+  my $cart = cart({ schema => $schema });
+  Dumper($cart->{items});
+};
 get '/cart/clear_cart/:schema?' => sub {
   my $schema = param('schema');
   clear_cart( { name => 'main' , schema => $schema } );

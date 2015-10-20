@@ -1,143 +1,382 @@
 package Dancer2::Plugin::Cart;
-our $VERSION = '0.0001';  #Version
 use strict;
 use warnings;
-use Dancer2::Plugin;
-use namespace::clean;
+use Dancer2::Plugin2;
+use Dancer2::Plugin::Cart::InlineViews;
+our $VERSION = '0.0001';  #Version
 
-my $settings = undef;
-my $cart_name = undef;
-my $cart_product_name = undef; 
-my $product_name = undef;
-my $product_pk = undef;
-my $product_price_f = undef;
-my $product_filter = undef;
-my $product_order = undef;
- 
-register 'cart' => \&_cart;
-register 'cart_add' => \&_cart_add;
-register 'products' => \&_products;
-register 'clear_cart' => \&_clear_cart;
-register 'product_quantity' => \&_product_quantity;
-register 'subtotal' => \&_subtotal;
-register 'place_order' => \&_place_order;
-
-register_hook 'before_get_product_info';
-
-my $load_settings = sub {
-  $settings = plugin_setting;
-  $cart_name = $settings->{cart_name} || 'EcCart';
-  $cart_product_name = $settings->{cart_product_name} || 'EcCartProduct';
-  $product_name = $settings->{product_name} || 'EcProduct';
-  $product_pk = $settings->{product_pk} || 'sku';
-  $product_price_f = $settings->{product_price_f} || 'price';
-  $product_filter = $settings->{product_filter} || undef;
-  $product_order = $settings->{product_order} || undef;
-};
-
-
-on_plugin_import {
-    my $dsl = shift;
-    $load_settings->();
-};
-
-sub _cart {
-  my ($dsl, $params ) = @_;
-  my ($name, $schema, $status, $cart_id) = parse_params($params);
-  $load_settings->();
-  my $cart_info = {
-    session => $dsl->session->{'id'},
-  };
-
-  $cart_info->{name} = $name ? $name : 'main';
-  $cart_info->{status} = $status ? $status : 0;
-
-  if ( $cart_id ){
-    $cart_info->{id} = $cart_id;
-    delete $cart_info->{session};
-  }
-
-  my $cart = undef;
-
-  if ( $cart_info->{status} == 0 ){
-    $cart = $dsl->schema($schema)->resultset($cart_name)->find_or_create($cart_info);
-  }
-  else{
-    $cart = $dsl->schema($schema)->resultset($cart_name)->search($cart_info)->first;
-  }
-  $params->{cart_id} = $cart->id;
-  my $cart_items = cart_items ( $dsl, $params );
-  return { $cart->get_columns, items => $cart_items->{items} , subtotal => $cart_items->{subtotal} } if $cart;
-};
-
-sub cart_items {
-  my ($dsl, $params ) = @_;
-  my ($name, $schema, $status, $cart_id ) = parse_params($params);
-
-  my $arr = [];
-  my $cart_items = $dsl->schema($schema)->resultset($cart_product_name)->search( 
-    { 
-      cart_id => $cart_id,
+has 'dbic' => (
+    is => 'ro',
+    lazy => 1,
+    default => sub {
+        scalar $_[0]->app->with_plugins( 'DBIC' )
     },
-  );
-  my $subtotal = 0;
-  while( my $ci = $cart_items->next ){
-    my $product =  $dsl->schema->resultset($product_name)->search({ $product_pk => $ci->sku })->single;
-    $subtotal += $ci->price * $ci->quantity;
-    push @{$arr}, {$product->get_columns, ec_quantity => $ci->quantity, ec_price  => $ci->price };
-  }
-  return { items => $arr , subtotal => $subtotal };
+    handles => { 'schema' => 'schema', 'resultset' => 'resultset' },
+);
+
+has 'cart_name' => (
+  is => 'ro',
+  from_config => 1,
+  default => sub { 'EcCart' }
+);
+
+has 'cart_product_name' => (
+  is => 'ro',
+  from_config => 'cart_product_name',
+  default => sub { 'EcCartProduct' }
+);
+
+has 'product_name' => (
+  is => 'ro',
+  from_config => 'product_name',
+  default => sub { 'EcProduct' }
+);
+
+has 'product_pk' => (
+  is => 'ro',
+  from_config => 'product_pk',
+  default => sub { 'sku' }
+);
+
+has 'product_filter' => (
+  is => 'ro',
+  from_config => 'product_filter',
+  default => sub { undef } 
+);
+
+has 'product_order' => (
+  is => 'ro',
+  from_config => 'product_order',
+  default => sub { undef }
+);
+
+has 'products_view_template' => (
+  is => 'ro',
+  from_config => 'views.products',
+  default => sub {}
+);
+
+has 'cart_view_template' => (
+  is => 'ro',
+  from_config => 'views.products',
+  default => sub {}
+);
+
+has 'cart_receipt_template' => (
+  is => 'ro',
+  from_config => 'views.receipt',
+  default => sub {}
+);
+
+has 'cart_checkout_template' => (
+  is => 'ro',
+  from_config => 'views.checkout',
+  default => sub {}
+);
+
+has 'shipping_view_template' => (
+  is => 'ro',
+  from_config => 'views.shipping',
+  default => sub {}
+);
+
+has 'billing_view_template' => (
+  is => 'ro',
+  from_config => 'views.billing',
+  default => sub {}
+);
+
+has 'review_view_template' => (
+  is => 'ro',
+  from_config => 'views.review',
+  default => sub {}
+);
+
+has 'receipt_view_template' => (
+  is => 'ro',
+  from_config => 'views.receipt',
+  default => sub {}
+);
+
+has 'shipping_sku' => (
+  is => 'ro',
+  from_config => 'shipping_sku',
+  default => sub { 'SHIPPING' }
+);
+
+has 'default_routes' => (
+  is => 'ro',
+  from_config => 1,
+  default => sub { '1' }
+);
+
+plugin_keywords qw/ 
+  cart 
+  cart_add
+  products
+  clear_cart
+  subtotal
+  place_order
+  shipping
+/;
+
+plugin_hooks qw/
+  validate_shipping_params
+  validate_billing_params
+  validate_checkout
+/;
+
+
+sub BUILD {
+  my $self = shift;
+  #Create a session 
+  my $settings = $self->app->config;
+  use Data::Dumper;
+  #print Dumper($self->config);
+  #if( $settings->{plugins}->{Cart}->{default_routes} == undef || $settings->{plugins}->{Cart}->{default_routes} != 'false' ){  
+    $self->app->add_route(
+      method => 'get',
+      regexp => '/products',
+      code   => sub { 
+        my $app = shift;
+        #generate session if didn't exists
+        $app->session;
+        my $template = $self->products_view_template || '/products.tt' ;
+        if( -e $self->app->config->{views}.$template ) {
+          my @products = $self->products;
+          $app->template( $template, {
+            products => $self->products
+          } );
+        }
+        else{
+          _products_view({ products => $self->products, product_pk => $self->product_pk });
+        }
+      },
+    );
+
+    $self->app->add_route(
+      method => 'get',
+      regexp => '/cart',
+      code => sub {
+        my $app = shift;
+        my $cart = $self->cart;
+        #Generate session if didn't exists
+        $app->session;
+        my $template = $self->cart_view_template || '/cart/cart.tt' ;
+        if( -e $self->app->config->{views}.$template ) {
+          $app->template(  $template, {
+            cart => $cart
+          } );
+        }
+        else{
+           _cart_view({ cart => $cart, product_pk => $self->product_pk });
+        }
+      }
+    );
+
+    $self->app->add_route(
+      method => 'post',
+      regexp => '/cart/add',
+      code => sub {
+        my $app = shift;
+        $self->execute_cart_add({ $app->request->params });
+        $self->app->redirect('/cart');
+      }
+    );
+
+    $self->app->add_route(
+      method => 'get',
+      regexp => '/cart/clear',
+      code => sub {
+        my $app = shift;
+        $self->clear_cart;
+        $app->redirect('/cart');
+      } 
+    );
+
+    $self->app->add_route(
+      method => 'get',
+      regexp => '/cart/shipping',
+      code => sub {
+        my $app = shift;
+        my $cart = $self->cart;
+        my $template = $self->shipping_view_template || '/cart/shipping.tt';
+        my $page = "";
+        if( -e $app->config->{views}.$template ) {
+            $page = $app->template ($template, {
+            cart => $cart,
+            ec_cart => $app->session->read('ec_cart'),
+          });
+        }
+        else{
+          $page = _shipping_view({ cart => $cart, ec_cart => $app->session->read('ec_cart') });
+        }
+        my $ec_cart = $app->session->read('ec_cart');
+        delete $ec_cart->{shipping}->{error} if $ec_cart->{shipping}->{error};
+        $app->session->write('ec_cart',$ec_cart);
+        $page;
+      }
+    ); 
+  
+    $self->app->add_route(
+      method => 'post',
+      regexp => '/cart/shipping',
+      code => sub {
+        my $app = shift;
+        my $params = ($app->request->params);
+        $app->execute_hook ( 'plugin.cart.validate_shipping_params', $params );
+        my $ec_cart = $app->session->read('ec_cart');
+        if ( $ec_cart->{shipping}->{error} ){
+          $ec_cart->{shipping}->{form} = $params;
+          $app->session->write( 'ec_cart', $ec_cart );
+          $app->redirect('/cart/shipping');
+        }
+        else{
+          $ec_cart->{shipping}->{form} = $params;
+          $app->session->write( 'ec_cart', $ec_cart );
+          $app->redirect('/cart/billing');
+        }
+      }
+    );
+
+    $self->app->add_route(
+      method => 'get',
+      regexp => '/cart/billing',
+      code => sub {
+        my $app = shift;
+        my $cart = $self->cart;
+        my $template = $self->billing_view_template || '/cart/billing.tt' ;
+        if( -e $app->config->{views}.$template ) {
+            $app->template( $template, {
+              cart => $cart,
+              ec_cart => $app->session->read('ec_cart'),
+            });
+        }
+        else{
+          _billing_view({ ec_cart => $app->session->read('ec_cart') });
+        }
+      }
+    );
+
+    $self->app->add_route(
+      method => 'post',
+      regexp => '/cart/billing',
+      code => sub {
+        my $app = shift;
+        my $params = ($app->request->params);
+        $app->execute_hook ( 'plugin.cart.validate_billing_params', $params );
+        my $ec_cart = $app->session->read('ec_cart');
+        if( $ec_cart->{billing}->{error} ){
+          $ec_cart->{billing}->{form} = $params;
+          $app->session->write( 'ec_cart', $ec_cart );
+          $app->redirect('/cart/billing');
+        }
+        else{
+          $ec_cart->{billing}->{form} = $params;
+          $app->session->write( 'ec_cart', $ec_cart );
+          $app->redirect('/cart/review');
+        }
+      }
+    );
+    
+    $self->app->add_route(
+      method => 'get',
+      regexp => '/cart/review',
+      code => sub { 
+        my $app = shift;
+        my $cart = $self->cart;
+        my $page = "";
+        my $template = $self->review_view_template || '/cart/review.tt' ;
+        if( -e $app->config->{views}.$template ) {
+            $page = $app->template($template,{
+              cart => $cart,
+              ec_cart => $app->session->read('ec_cart'),
+            });
+        }
+        else{
+          $page = _review_view( { cart => $cart , ec_cart => $app->session->read('ec_cart') } );
+        }
+        my $ec_cart = $app->session->read('ec_cart');
+        delete $ec_cart->{checkout}->{error} if $ec_cart->{checkout}->{error};
+        $app->session->write('ec_cart',$ec_cart);
+        $page;
+      }
+    );
+
+    $self->app->add_route(
+      method => 'post',
+      regexp => '/cart/checkout',
+      code => sub {
+        my $app = shift;
+        my $params = ($app->request->params);
+        $app->execute_hook ( 'plugin.cart.validate_checkout', $params );
+        my $ec_cart_data = $app->session->read('ec_cart');
+        if ( $ec_cart_data->{checkout}->{error} ){
+          $app->redirect('/cart/review');
+        }
+        else{
+          my $cart_id = $self->place_order;
+          $app->session->delete( 'ec_cart' );
+          $app->session->write('ec_cart',{ cart => { id => $cart_id } } );
+          $app->redirect('/cart/receipt');
+        }
+      }
+    );
+
+    $self->app->add_route(
+      method => 'get',
+      regexp => '/cart/receipt',
+      code => sub {
+        my $app = shift;
+        my $template = $self->receipt_view_template || '/cart/receipt.tt' ;
+        my $ec_cart = $app->session->read('ec_cart');
+        $app->redirect('/products') unless $ec_cart->{cart}->{id};
+        my $cart = $self->cart( { status => 1, cart_id => $ec_cart->{cart}->{id} });
+        require Dancer2::Serializer::JSON;
+        $cart->{log} =  Dancer2::Serializer::JSON::from_json( $cart->{log} );
+        my $page = "";
+        if( -e $app->config->{views}.$template ) {
+            $page = $app->template($template, { cart => $cart } );
+        }
+        else{
+          $page = _receipt_view({ cart => $cart });
+        }
+        $app->session->delete('ec_cart');
+        $page;
+      }
+    );
+#  }
 };
 
-sub _cart_add {
-  my ($dsl , $product, $params) = @_;
-  $load_settings->();
-  my ($name, $schema) = parse_params($params);
 
-  my $product_info = get_product_info($dsl, $product, { schema => $schema } );
-  return $product_info if $product_info->{error};
-
-  my $cart_item = cart_add_product($dsl, $product_info, $product->{quantity}, $params);
-  return $cart_item;
-};
-
-sub _products {
-  my ($dsl, $schema) = @_;
-  my $product_filter_eval = $product_filter ? eval $product_filter : {};
-  my $product_order_eval  = $product_order ? { order_by => { eval $product_order } } : {};
+sub products {
+  my ($self, $schema) = @_;
+  my $product_filter_eval = $self->product_filter ? eval $self->product_filter : {};
+  my $product_order_eval  = $self->product_order ? { order_by => { eval $self->product_order } } : {};
 
   my $arr = [];
-
-  my $products = $dsl->schema($schema)->resultset($product_name)->search( $product_filter_eval , $product_order_eval );
+  my $products = $self->dbic->schema($schema)->resultset($self->product_name)->search( $product_filter_eval, $product_order_eval );
 
   while( my $product = $products->next ){
-    push @{$arr}, { $product->get_columns }
+    my $ec_sku = $self->product_pk;
+    push @{$arr}, { $product->get_columns, ec_sku => $product->$ec_sku };
   }
 
   $arr;
 }
-
-sub get_product_info {
-  my ( $dsl, $product, $params ) = @_;
-  my $schema = $params->{schema} || undef;
-
-  my $product_info = $dsl->schema($schema)->resultset($product_name)->find({ $product_pk => $product->{sku} });
-  return $product_info ? { $product_info->get_columns } : { error => "Product doesn't exists."};
-};
-
-sub cart_add_product {
-  my ( $dsl, $product_info, $quantity, $params ) = @_;
-  my $schema = $params->{schema} || undef;
+sub cart_add {
+  my ( $self, $product, $params ) = @_;
+  my ( $name, $schema ) = parse_params($params);
 
   #check if the product exists other whise create a new one
-  my $cart_product = $dsl->schema($schema)->resultset($cart_product_name)->find({
-    cart_id =>  _cart($dsl,{ schema => $schema  })->{id},
-    sku => $product_info->{$product_pk},
+  my $cart_product = $self->dbic->schema($schema)->resultset($self->cart_product_name)->find({
+    cart_id =>  $self->cart( $params )->{id},
+    sku => $product->{ ec_sku },
   });
   if( $cart_product ){
-   if ( $cart_product->quantity + $quantity > 0 ){
+   if ( $cart_product->quantity + $product->{ec_quantity} > 0 ){
       $cart_product->update({
-        quantity => $cart_product->quantity + $quantity
+        quantity => $cart_product->quantity + $product->{ec_quantity}
       });
     }
     else{
@@ -145,52 +384,87 @@ sub cart_add_product {
     }
   } 
   else{
-     $cart_product = $dsl->schema($schema)->resultset($cart_product_name)->create({
-      cart_id =>  _cart($dsl,undef, $schema)->{id},
-      sku => $product_info->{$product_pk},
-      price => $product_info->{$product_price_f} || 0,
-      quantity => $quantity,
+     $cart_product = $self->dbic->schema($schema)->resultset($self->cart_product_name)->create({
+      cart_id =>  $self->cart( $params )->{id},
+      sku => $product->{ec_sku},
+      price => $product->{ec_price} || 0,
+      quantity => $product->{ec_quantity} || 0,
     });
   }
   return $cart_product ? { $cart_product->get_columns } : { error => "Error trying to create CartProduct."};
 };
 
-sub _clear_cart {
-  my ($dsl, $params ) = @_;
+sub cart {
+  my ($self, $params ) = @_;
+  my ($name, $schema, $status, $cart_id) = parse_params($params);
+  my $cart_info = {
+    session => $self->app->session->{'id'},
+  };
+
+  $cart_info->{name} = $name || 'main';
+  $cart_info->{status} = $status ? $status : 0;
+
+  if ( $cart_id ){
+    $cart_info->{id} = $cart_id;
+    delete $cart_info->{session};
+  }
+  
+  my $cart = undef;
+
+  if ( $cart_info->{status} == 0 ){
+    $cart = $self->dbic->schema($schema)->resultset($self->cart_name)->find_or_create($cart_info);
+  }
+  else{
+    $cart = $self->schema($schema)->resultset($self->cart_name)->search($cart_info)->first;
+  }
+  $params->{cart_id} = $cart->id if $cart;
+  my $cart_items = cart_items ($self, $params );
+  return { $cart->get_columns, items => $cart_items->{items} , subtotal => $cart_items->{subtotal} } if $cart;
+};
+
+sub cart_items {
+  my ( $self, $params ) = @_;
+  my ($name, $schema, $status, $cart_id ) = parse_params($params);
+
+  my $arr = [];
+  my $cart_items = $self->dbic->schema($schema)->resultset($self->cart_product_name)->search( 
+    { 
+      cart_id => $cart_id,
+    },
+  );
+  while( my $ci = $cart_items->next ){
+    my $product =  $self->dbic->schema->resultset($self->product_name)->search({ $self->product_pk => $ci->sku })->single;
+    if ($product) {
+      push @{$arr}, {$product->get_columns, ec_sku => $ci->sku , ec_quantity => $ci->quantity, ec_price  => $ci->price };
+    }
+    else{
+      push @{$arr}, { ec_sku => $ci->sku , ec_quantity => $ci->quantity, ec_price  => $ci->price };
+    }
+  }
+  return { items => $arr };
+};
+
+
+sub clear_cart {
+  my ($self, $params ) = @_;
   my ($name, $schema) = parse_params($params);
 
   #get cart_id
-  my $cart_id = _cart($dsl, { name => $name, schema => $schema } )->{id}; 
+  my $cart_id = cart($self, { name => $name, schema => $schema })->{id}; 
 
   #delete the cart_product info
-  $dsl->schema($schema)->resultset($cart_product_name)->search({ cart_id => $cart_id })->delete_all;
+  $self->schema($schema)->resultset($self->cart_product_name)->search({ cart_id => $cart_id })->delete_all;
   #delete products
-  $dsl->schema($schema)->resultset($cart_name)->search({ id => $cart_id })->delete;
+  $self->schema($schema)->resultset($self->cart_name)->search({ id => $cart_id })->delete;
 }
 
-sub _product_quantity{
-  my ($dsl, $params) = @_;
-  my ($name, $schema) = parse_params($params);
-  my $cart_id = _cart($dsl,{name => $name,  schema => $schema })->{id}; 
-  my $rs = $dsl->schema($schema)->resultset($cart_product_name)->search(
-    { 
-      cart_id => $cart_id 
-    },
-    {
-      select => [{ sum => 'quantity' }],
-      as => ['quantity']
-    }
-  );
-  $rs->first->get_column('quantity') ? $rs->first->get_column('quantity') : 0;
-}
-
-sub _subtotal{
-  my ($dsl, $params) = @_;
+sub subtotal{
+  my ($self, $params) = @_;
   my ($name,$schema) = parse_params($params);
   my $subtotal = 0;
-  my $cart_products = $dsl->schema($schema)->resultset($cart_product_name)->search(
+  my $cart_products = $self->schema($schema)->resultset($self->cart_product_name)->search(
     {
-      cart_id => _cart($dsl,$name,$schema)->{id},
+      cart_id => $self->cart( $params )->{id},
     },
   );
   while( my $ci = $cart_products->next ){
@@ -199,32 +473,41 @@ sub _subtotal{
   $subtotal;
 }
 
-sub _place_order{
-  my ($dsl, $params) = @_;
+sub place_order{
+  my ($self, $params) = @_;
   my ($name, $schema) = parse_params($params);
+  my $app = $self->app;
 
-  my $cart = _cart($dsl,{ name => $name, schema => $schema });
+  my $cart = $self->cart({ name => $name, schema => $schema });
   return { error => 'Cart without items' } unless @{$cart->{items}} > 0;
 
-  my $cart_temp = $dsl->schema($schema)->resultset($cart_name)->find($cart->{id});
+  my $cart_temp = $self->dbic->schema($schema)->resultset($self->cart_name)->find($cart->{id});
   return { error => 'Cart not found' } unless $cart_temp;
-
+  require Dancer2::Serializer::JSON;
+  
   $cart_temp->update({
     status => 1,
-    session => $dsl->session->{id}."_1",
-    log => $dsl->to_json( {
-      data => $dsl->session->{data},
-      session => $dsl->session->{id},
-      items => cart_items( $dsl, 
+    session => $app->session->{id}."_1",
+    log => Dancer2::Serializer::JSON::to_json( {
+      data => $app->session->{data},
+      session => $app->session->{id},
+      items => $self->cart_items(
         { 
-          cart_id => _cart($dsl,{ name => $name, schema => $schema } )->{id}, 
+          cart_id => $self->cart( { name => $name, schema => $schema } )->{id}, 
           schema => $schema 
         } 
       ),
-      subtotal => _subtotal( $dsl, { name => $name, schema => $schema } ) },
-    ),
+      subtotal => $self->subtotal( { name => $name, schema => $schema } ) },
+    )
+,
   });
   $cart_temp->id;
+}
+
+sub execute_cart_add {
+  my ($self, $params) = @_;
+  my $product = { ec_sku => $params->{'ec_sku'}, ec_quantity => $params->{'ec_quantity'} };
+  return $self->cart_add($product);
 }
 
 sub parse_params {
@@ -232,6 +515,5 @@ sub parse_params {
   return ($params->{name}, $params->{schema}, $params->{status}, $params->{cart_id});
 }
 
-register_plugin;
 1;
 __END__

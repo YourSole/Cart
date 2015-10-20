@@ -5,7 +5,6 @@ use warnings;
 use Test::More;
 use Plack::Test;
 use Dancer2;
-use Dancer2::Plugin::DBIC;
 use HTTP::Request::Common;
 use File::Temp qw(tempfile);
 use DBI;

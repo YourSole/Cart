@@ -5,12 +5,12 @@ use warnings;
 use Test::More;
 use Plack::Test;
 use Dancer2;
-use Dancer2::Plugin::DBIC;
 use HTTP::Request::Common;
 use File::Temp qw(tempfile);
 use DBI;
 use File::Spec;
 use HTTP::Cookies;
+use Data::Dumper;
 
 use lib File::Spec->catdir( 't', 'lib' );
 
@@ -26,8 +26,9 @@ my (undef, $dbfile) = tempfile(SUFFIX => '.db');
 t::lib::TestApp1::set plugins => {
     'Cart' => {
       product_name => 'EcProduct',
-      product_filter => "{ name => { 'like', '%SU0%'} }",
+      product_filter => "{ sku => { 'like', '%SU0%'} }",
       product_order => "{ -asc => 'sku' }",
+      'ppp' => 'test'
     },
     DBIC => {
         foo => {
@@ -103,11 +104,12 @@ subtest 'list products' => sub {
   like(
     $res->content, qr/SU05/,'Get content /products'
   );
-
+  $jar->extract_cookies($res);
 };
 
 subtest 'Add product' => sub {
-  my $req = POST $site . '/cart/add', [ 'sku' => "SU03", 'quantity' => '1' ];
+  my $req = POST $site . '/cart/add', [ 'ec_sku' => "SU03", 'ec_quantity' => '1' ];
+  $jar->add_cookie_header($req);
   my $res = $test->request( $req );
   is(
     $res->{_rc}, '302','Get content /cart'
@@ -115,16 +117,15 @@ subtest 'Add product' => sub {
   like(
     $res->headers->{location}, qr/cart/, 'Redirect to /cart'
   );
-  $jar->extract_cookies($res);
 
   $req = GET $site . '/cart';
   $jar->add_cookie_header($req);
   $res = $test->request( $req );
   like(
-    $res->content, qr/SU03/, 'Cart info'
+    $res->content, qr/SU03/, 'Cart has SU03'
   );  
 
-  $req = POST $site . '/cart/add', [ 'sku' => "SU03", 'quantity' => '1' ];
+  $req = POST $site . '/cart/add', [ 'ec_sku' => "SU03", 'ec_quantity' => '1' ];
   $jar->add_cookie_header($req);
   $res = $test->request( $req );
 
@@ -133,7 +134,7 @@ subtest 'Add product' => sub {
   $jar->add_cookie_header($req);
   $res = $test->request( $req );
   like(
-    $res->content, qr/>2</, 'Cart info'
+    $res->content, qr/>2</, 'Cart has SU03 with 2 items'
   ); 
   
 };
@@ -158,12 +159,22 @@ subtest 'Shipping info' => sub {
     $res->{_rc}, '200','Get content /cart/shipping'
   );
 
-  $req = POST $site.'/cart/shipping'; $res = $test->request ( $req ); is( $res->{_rc}, '302','Get content /cart/shipping');
+  $req = POST $site.'/cart/shipping'; 
+  $jar->add_cookie_header( $req );
+  $res = $test->request ( $req ); 
+  is( $res->{_rc}, '302','Get content /cart/shipping');
+  like(
+    $res->headers->{location}, qr/shipping/, 'Validates redirects location to shipping'
+  );
 
-  $req = POST $site.'/cart/shipping', [ 'ship_mode' => "0" ];
+  $req = POST $site.'/cart/shipping', [ 'ship_mode' => "2" ];
+  $jar->add_cookie_header( $req );
   $res = $test->request ( $req );
   is(
     $res->{_rc}, '302','Validation redirects to Billing Info'
+  );
+  like(
+    $res->headers->{location}, qr/billing/, 'Validates redirects location to billing info'
   );
 };
 
@@ -174,6 +185,16 @@ subtest 'Billing info' => sub {
   my $res = $test->request ( $req );
   is(
     $res->{_rc}, '200','Get content /cart/billing'
+  );
+
+  $req = POST $site.'/cart/billing', [ 'billing_name' => "1" ];
+  $jar->add_cookie_header( $req );
+  $res = $test->request ( $req );
+  is(
+    $res->{_rc}, '302','Validation redirects to Billing Info'
+  );
+  like(
+    $res->headers->{location}, qr/review/, 'Validates redirects location to review'
   );
 };
 
@@ -186,56 +207,24 @@ subtest 'Review info' => sub {
   );
 };
 
-subtest 'Place order' => sub {
-  my $req = GET $site.'/cart/review';
+subtest 'Place Order' => sub {
+  my $req = POST $site.'/cart/checkout';
   $jar->add_cookie_header( $req );
   my $res = $test->request ( $req );
   is(
-    $res->{_rc}, '200','Get content /cart/review'
+    $res->{_rc}, '302','Checkout process'
   );
+
 };
 
-subtest 'checkout process' => sub {
-  my $req = GET $site .'/cart/checkout';
+subtest 'Receipt' => sub {
+  my $req = GET $site.'/cart/receipt';
   $jar->add_cookie_header( $req );
   my $res = $test->request ( $req );
   is(
-    $res->{_rc}, '200','Get content /products'
-  );  
-
-
-  $req = POST $site . '/cart/checkout', [ 'email' => "" ];
-  $jar->add_cookie_header($req);
-  $res = $test->request( $req );
-  is(
-    $res->{_rc}, '302','Validation redirects to checkout page'
-  );
-  like(
-    $res->header('location'), qr/\/cart\/checkout/,'Redirect to checkout again'
-  );
-  
-  $req = POST $site . '/cart/checkout', [ 'email' => "email\@domain.com" ];
-  $jar->add_cookie_header($req);
-  $res = $test->request( $req );
-  is(
-    $res->{_rc}, '302','Validation redirects to receipt page'
-  );
-  like(
-    $res->header('location'), qr/\/cart\/receipt/,'Redirect to receipt page'
+    $res->{_rc}, '200','Get content /cart/receipt'
   );
 
-  $req = GET $site . '/cart/receipt';
-  $jar->add_cookie_header($req);
-  $res = $test->request( $req );
-  like(
-    $res->content, qr/Complete/,'cart completed.'
-  );
-  like(
-    $res->content, qr/20/,'Get the subtotal on log info.'
-  );
-  like(
-    $res->content, qr/email\@domain.com/,'Get session data on log info.'
-  );
 };
 
 unlink $dbfile;

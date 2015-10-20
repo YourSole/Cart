@@ -5,7 +5,6 @@ use warnings;
 use Test::More;
 use Plack::Test;
 use Dancer2;
-use Dancer2::Plugin::DBIC;
 use HTTP::Request::Common;
 use File::Temp qw(tempfile);
 use DBI;
@@ -92,17 +91,17 @@ my $site = "http://localhost";
 
 
 subtest 'Adding products to default schema' =>sub {
-  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU03", 'quantity' => '7' ];
+  my $req = POST $site . '/cart/add_product', [ 'ec_sku' => "SU03", 'ec_quantity' => '7' ];
   my $res = $test->request( $req );
   $jar->extract_cookies( $res );
   like(
       $res->content, qr/SU03/,'Get content for /cart/add_product/SU03'
   );
-  $req = GET $site . '/cart/quantity/foo';
+  $req = GET $site . '/cart/foo';
   $jar->add_cookie_header( $req );
   $res = $test->request( $req );
   like(
-    $res->content, qr/quantity=7/,'Get content /cart/quantity/foo'
+    $res->content, qr/'ec_quantity' => 7/,'Get content /cart/foo'
   );
   
 };
@@ -110,25 +109,25 @@ subtest 'Adding products to default schema' =>sub {
 
 
 subtest 'Adding products to bar and cheking foo and bar schemas' =>sub {
-  my $req = POST $site . '/cart/add_product_bar', [ 'sku' => "SU04", 'quantity' => '1' ];
+  my $req = POST $site . '/cart/add_product_bar', [ 'ec_sku' => "SU04", 'ec_quantity' => '1' ];
   $jar->add_cookie_header( $req );
   my $res = $test->request( $req );
   like(
       $res->content, qr/SU04/,'Get content for /cart/add_product_bar/SU04'
   );
   
-  $req = GET $site . '/cart/quantity/foo';
+  $req = GET $site . '/cart/foo';
   $jar->add_cookie_header( $req );
   $res = $test->request( $req );
   like(
-    $res->content, qr/quantity=7/,'Get content /cart/quantity/foo'
+    $res->content, qr/'ec_quantity' => 7/,'Get content /cart/foo'
   );
 
-  $req = GET $site . '/cart/quantity/bar';
+  $req = GET $site . '/cart/bar';
   $jar->add_cookie_header( $req );
   $res = $test->request( $req );
   like(
-    $res->content, qr/quantity=1/,'Get content /cart/quantity/bar'
+    $res->content, qr/'ec_quantity' => 1/,'Get content /cart/bar'
   );
 };
 
@@ -141,11 +140,11 @@ subtest 'Clear cart' => sub {
       $res->content, qr/\[\]/,'Get content for /cart/clear_cart'
   );
   
-  $req = GET $site . '/cart/quantity/foo';
+  $req = GET $site . '/cart/foo';
   $jar->add_cookie_header( $req );
   $res = $test->request( $req );
   like(
-    $res->content, qr/quantity=7/,'Get content /cart/quantity/foo'
+    $res->content, qr/'ec_quantity' => 7/,'Get content /cart/foo'
   );
 
 };
