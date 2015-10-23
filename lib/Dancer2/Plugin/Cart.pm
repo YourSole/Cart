@@ -14,6 +14,7 @@ has 'dbic' => (
     handles => { 'schema' => 'schema', 'resultset' => 'resultset' },
 );
 
+
 has 'cart_name' => (
   is => 'ro',
   from_config => 1,
@@ -36,6 +37,12 @@ has 'product_pk' => (
   is => 'ro',
   from_config => 'product_pk',
   default => sub { 'sku' }
+);
+
+has 'product_price' => (
+  is => 'ro',
+  from_config => 'product_price',
+  default => sub { 'price' }
 );
 
 has 'product_filter' => (
@@ -98,12 +105,6 @@ has 'receipt_view_template' => (
   default => sub {}
 );
 
-has 'shipping_sku' => (
-  is => 'ro',
-  from_config => 'shipping_sku',
-  default => sub { 'SHIPPING' }
-);
-
 has 'default_routes' => (
   is => 'ro',
   from_config => 1,
@@ -111,19 +112,32 @@ has 'default_routes' => (
 );
 
 plugin_keywords qw/ 
-  cart 
-  cart_add
   products
+  cart_add
+  execute_cart_add
+  cart 
   clear_cart
   subtotal
   place_order
-  shipping
 /;
 
 plugin_hooks qw/
+  validate_cart_add_params
+  before_cart_add
+  after_cart_add
   validate_shipping_params
+  before_shipping
+  get_rates 
+  after_shipping
   validate_billing_params
-  validate_checkout
+  before_billing
+  billing
+  after_billing
+  validate_checkout_params
+  before_checkout
+  after_checkout
+  before_clear_cart
+  after_clear_cart
 /;
 
 
@@ -131,9 +145,7 @@ sub BUILD {
   my $self = shift;
   #Create a session 
   my $settings = $self->app->config;
-  use Data::Dumper;
-  #print Dumper($self->config);
-  #if( $settings->{plugins}->{Cart}->{default_routes} == undef || $settings->{plugins}->{Cart}->{default_routes} != 'false' ){  
+  if( $self->default_routes ){  
     $self->app->add_route(
       method => 'get',
       regexp => '/products',
@@ -179,8 +191,7 @@ sub BUILD {
       regexp => '/cart/add',
       code => sub {
         my $app = shift;
-        $self->execute_cart_add({ $app->request->params });
-        $self->app->redirect('/cart');
+        $self->execute_cart_add;
       }
     );
 
@@ -189,8 +200,7 @@ sub BUILD {
       regexp => '/cart/clear',
       code => sub {
         my $app = shift;
-        $self->clear_cart;
-        $app->redirect('/cart');
+        $self->execute_clear_cart;
       } 
     );
 
@@ -213,7 +223,7 @@ sub BUILD {
         }
         my $ec_cart = $app->session->read('ec_cart');
         delete $ec_cart->{shipping}->{error} if $ec_cart->{shipping}->{error};
-        $app->session->write('ec_cart',$ec_cart);
+        $app->session->write( 'ec_cart', $ec_cart );
         $page;
       }
     ); 
@@ -222,20 +232,7 @@ sub BUILD {
       method => 'post',
       regexp => '/cart/shipping',
       code => sub {
-        my $app = shift;
-        my $params = ($app->request->params);
-        $app->execute_hook ( 'plugin.cart.validate_shipping_params', $params );
-        my $ec_cart = $app->session->read('ec_cart');
-        if ( $ec_cart->{shipping}->{error} ){
-          $ec_cart->{shipping}->{form} = $params;
-          $app->session->write( 'ec_cart', $ec_cart );
-          $app->redirect('/cart/shipping');
-        }
-        else{
-          $ec_cart->{shipping}->{form} = $params;
-          $app->session->write( 'ec_cart', $ec_cart );
-          $app->redirect('/cart/billing');
-        }
+        $self->execute_shipping;
       }
     );
 
@@ -262,20 +259,7 @@ sub BUILD {
       method => 'post',
       regexp => '/cart/billing',
       code => sub {
-        my $app = shift;
-        my $params = ($app->request->params);
-        $app->execute_hook ( 'plugin.cart.validate_billing_params', $params );
-        my $ec_cart = $app->session->read('ec_cart');
-        if( $ec_cart->{billing}->{error} ){
-          $ec_cart->{billing}->{form} = $params;
-          $app->session->write( 'ec_cart', $ec_cart );
-          $app->redirect('/cart/billing');
-        }
-        else{
-          $ec_cart->{billing}->{form} = $params;
-          $app->session->write( 'ec_cart', $ec_cart );
-          $app->redirect('/cart/review');
-        }
+        $self->execute_billing; 
       }
     );
     
@@ -307,19 +291,7 @@ sub BUILD {
       method => 'post',
       regexp => '/cart/checkout',
       code => sub {
-        my $app = shift;
-        my $params = ($app->request->params);
-        $app->execute_hook ( 'plugin.cart.validate_checkout', $params );
-        my $ec_cart_data = $app->session->read('ec_cart');
-        if ( $ec_cart_data->{checkout}->{error} ){
-          $app->redirect('/cart/review');
-        }
-        else{
-          my $cart_id = $self->place_order;
-          $app->session->delete( 'ec_cart' );
-          $app->session->write('ec_cart',{ cart => { id => $cart_id } } );
-          $app->redirect('/cart/receipt');
-        }
+        $self->execute_checkout;
       }
     );
 
@@ -345,12 +317,14 @@ sub BUILD {
         $page;
       }
     );
-#  }
+  }
 };
 
 
 sub products {
-  my ($self, $schema) = @_;
+  my ($self, $params) = @_;
+  my ($name, $schema) = _parse_params($params);
+
   my $product_filter_eval = $self->product_filter ? eval $self->product_filter : {};
   my $product_order_eval  = $self->product_order ? { order_by => { eval $self->product_order } } : {};
 
@@ -359,14 +333,14 @@ sub products {
 
   while( my $product = $products->next ){
     my $ec_sku = $self->product_pk;
-    push @{$arr}, { $product->get_columns, ec_sku => $product->$ec_sku };
+    my $ec_price = $self->product_price;
+    push @{$arr}, { $product->get_columns, ec_sku => $product->$ec_sku, ec_price => $product->$ec_price };
   }
-
   $arr;
 }
 sub cart_add {
   my ( $self, $product, $params ) = @_;
-  my ( $name, $schema ) = parse_params($params);
+  my ( $name, $schema ) = _parse_params($params);
 
   #check if the product exists other whise create a new one
   my $cart_product = $self->dbic->schema($schema)->resultset($self->cart_product_name)->find({
@@ -396,7 +370,7 @@ sub cart_add {
 
 sub cart {
   my ($self, $params ) = @_;
-  my ($name, $schema, $status, $cart_id) = parse_params($params);
+  my ($name, $schema, $status, $cart_id) = _parse_params($params);
   my $cart_info = {
     session => $self->app->session->{'id'},
   };
@@ -418,13 +392,13 @@ sub cart {
     $cart = $self->schema($schema)->resultset($self->cart_name)->search($cart_info)->first;
   }
   $params->{cart_id} = $cart->id if $cart;
-  my $cart_items = cart_items ($self, $params );
+  my $cart_items = $self->cart_items ( $params );
   return { $cart->get_columns, items => $cart_items->{items} , subtotal => $cart_items->{subtotal} } if $cart;
 };
 
 sub cart_items {
   my ( $self, $params ) = @_;
-  my ($name, $schema, $status, $cart_id ) = parse_params($params);
+  my ($name, $schema, $status, $cart_id ) = _parse_params($params);
 
   my $arr = [];
   my $cart_items = $self->dbic->schema($schema)->resultset($self->cart_product_name)->search( 
@@ -447,7 +421,7 @@ sub cart_items {
 
 sub clear_cart {
   my ($self, $params ) = @_;
-  my ($name, $schema) = parse_params($params);
+  my ($name, $schema) = _parse_params($params);
 
   #get cart_id
   my $cart_id = cart($self, { name => $name, schema => $schema })->{id}; 
@@ -456,11 +430,12 @@ sub clear_cart {
   $self->schema($schema)->resultset($self->cart_product_name)->search({ cart_id => $cart_id })->delete_all;
   #delete products
   $self->schema($schema)->resultset($self->cart_name)->search({ id => $cart_id })->delete;
+  $self->app->session->delete('ec_cart');
 }
 
 sub subtotal{
   my ($self, $params) = @_;
-  my ($name,$schema) = parse_params($params);
+  my ($name,$schema) = _parse_params($params);
   my $subtotal = 0;
   my $cart_products = $self->schema($schema)->resultset($self->cart_product_name)->search(
     {
@@ -473,9 +448,137 @@ sub subtotal{
   $subtotal;
 }
 
+
+sub execute_cart_add {
+  my $self = shift;
+  my $app = $self->app;
+  my $params = { $app->request->params };
+  my $product = undef;
+  
+  #Add params to ec_cart session
+  my $ec_cart = $app->session->read( 'ec_cart' );
+  $ec_cart->{add}->{form} = $params; 
+  $app->session->write( 'ec_cart', $ec_cart );
+
+  #Param validation
+  $app->execute_hook( 'plugin.cart.validate_cart_add_params' );
+  $ec_cart = $app->session->read('ec_cart');
+
+  if ( $ec_cart->{add}->{error} ){
+    $self->app->redirect( $app->request->referer );
+  }
+  else{
+    #Cart operations before add product to the cart.
+    $app->execute_hook( 'plugin.cart.before_cart_add' );
+    $ec_cart = $app->session->read('ec_cart');
+
+    if ( $ec_cart->{add}->{error} ){
+      $self->app->redirect( $app->request->referer );
+    }
+    else{
+      
+      $product = $self->cart_add({
+          ec_sku => $ec_cart->{add}->{form}->{'ec_sku'},
+          ec_quantity => $ec_cart->{add}->{form}->{'ec_quantity'}
+        }
+      );
+
+      #Cart operations after adding product to the cart
+      $app->execute_hook( 'plugin.cart.after_cart_add' );
+      $self->app->redirect( '/cart' );
+    }
+  }
+}
+
+sub execute_shipping {
+  my $self = shift;
+  my $app = $self->app;
+  my $params = { $app->request->params };
+  #Add params to ec_cart session
+  my $ec_cart = $app->session->read( 'ec_cart' );
+  $ec_cart->{shipping}->{form} = $params; 
+  $app->session->write( 'ec_cart', $ec_cart );
+  $app->execute_hook( 'plugin.cart.validate_shipping_params' );
+  $ec_cart = $app->session->read('ec_cart');
+  if ( $ec_cart->{shipping}->{error} ){
+    $app->redirect( $app->request->referer );
+  }
+  else{
+    $app->execute_hook( 'plugin.cart.before_shipping' );
+    my $ec_cart = $app->session->read('ec_cart');
+
+    if ( $ec_cart->{shipping}->{error} ){
+      $app->redirect( $app->request->referer );
+    }
+    else{  
+      $app->execute_hook( 'plugin.cart.get_rates' );
+    }
+    $app->execute_hook( 'plugin.cart.after_shipping' );
+    $app->redirect('/cart/billing');
+  }
+}
+
+sub execute_billing{
+  my $self = shift;
+  my $app = $self->app;
+  my $params = { $app->request->params };
+  #Add params to ec_cart session
+  my $ec_cart = $app->session->read( 'ec_cart' );
+  $ec_cart->{billing}->{form} = $params; 
+  $app->session->write( 'ec_cart', $ec_cart );
+  $app->execute_hook( 'plugin.cart.validate_billing_params' );
+  $ec_cart = $app->session->read('ec_cart');
+  if ( $ec_cart->{billing}->{error} ){
+    $app->redirect( $app->request->referer );
+  }
+  else{
+    $app->execute_hook( 'plugin.cart.before_billing' );
+    my $ec_cart = $app->session->read('ec_cart');
+
+    if ( $ec_cart->{shipping}->{error} ){
+      $app->redirect( $app->request->referer );
+    }
+    else{  
+      $app->execute_hook( 'plugin.cart.billing' );
+    }
+    $app->execute_hook( 'plugin.cart.after_billing' );
+    $app->redirect('/cart/review');
+  }
+}
+
+sub execute_checkout{
+  my $self = shift;
+  my $app = $self->app;
+
+  my $params = ($app->request->params);
+  $app->execute_hook( 'plugin.cart.validate_checkout_params' );
+  my $ec_cart = $app->session->read('ec_cart');
+
+  if ( $ec_cart->{checkout}->{error} ){
+    $app->redirect( $app->request->request_uri );
+  }
+  else{
+    $app->execute_hook( 'plugin.cart.before_checkout' ); 
+    my $cart_id = $self->place_order;
+    $app->session->delete( 'ec_cart' );
+    $app->session->write('ec_cart',{ cart => { id => $cart_id } } );
+    $app->execute_hook( 'plugin.cart.after_checkout' );
+    $app->redirect('/cart/receipt');
+  }
+}
+
+sub execute_clear_cart{
+  my $self = shift;
+  my $app = $self->app;
+  $self->execute_hook ('plugin.cart.before_clear_cart');
+  $self->clear_cart;
+  $self->execute_hook ('plugin.cart.after_clear_cart');
+  $self->app->redirect( '/cart' );
+}
+
 sub place_order{
   my ($self, $params) = @_;
-  my ($name, $schema) = parse_params($params);
+  my ($name, $schema) = _parse_params($params);
   my $app = $self->app;
 
   my $cart = $self->cart({ name => $name, schema => $schema });
@@ -487,7 +590,6 @@ sub place_order{
   
   $cart_temp->update({
     status => 1,
-    session => $app->session->{id}."_1",
     log => Dancer2::Serializer::JSON::to_json( {
       data => $app->session->{data},
       session => $app->session->{id},
@@ -504,13 +606,7 @@ sub place_order{
   $cart_temp->id;
 }
 
-sub execute_cart_add {
-  my ($self, $params) = @_;
-  my $product = { ec_sku => $params->{'ec_sku'}, ec_quantity => $params->{'ec_quantity'} };
-  return $self->cart_add($product);
-}
-
-sub parse_params {
+sub _parse_params {
   my ($params) = @_;
   return ($params->{name}, $params->{schema}, $params->{status}, $params->{cart_id});
 }

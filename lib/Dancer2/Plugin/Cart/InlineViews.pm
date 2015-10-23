@@ -7,7 +7,7 @@ sub _products_view{
   <table>
     <thead>
       <tr>
-        <th>Sku</th><th>Action</th>
+        <th>Sku</th><th>Price</th><th>Action</th>
       </tr>
     </thead>
     <tbody>";
@@ -15,10 +15,11 @@ sub _products_view{
     $page .= "
       <tr>
         <td>".$product->{ec_sku}."</td>
+        <td>".$product->{ec_price}."</td>
         <td>
           <form method='post' action='cart/add'>
-            <input type='hidden' name='sku' value='".$product->{ec_sku}."'>
-            <input type='hidden' name='quantity' value='1'>
+            <input type='hidden' name='ec_sku' value='".$product->{ec_sku}."'>
+            <input type='hidden' name='ec_quantity' value='1'>
             <input type='submit' value = 'Add'>
           </form>
         </td>
@@ -50,15 +51,15 @@ sub _cart_view{
         <tr>
           <td>".$item->{ec_sku}."</td>
           <td><form method='post' action='cart/add'>
-            <input type='hidden' name='sku' value='".$item->{ec_sku}."'>
-            <input type='hidden' name='quantity' value='-1'>
+            <input type='hidden' name='ec_sku' value='".$item->{ec_sku}."'>
+            <input type='hidden' name='ec_quantity' value='-1'>
             <input type='submit' value = '-1'>
             </form>
           </td>
           <td>". $item->{ec_quantity} ."</td>
           <td><form method='post' action='cart/add'>
-            <input type='hidden' name='sku' value='".$item->{ec_sku}."'>
-            <input type='hidden' name='quantity' value='1'>
+            <input type='hidden' name='ec_sku' value='".$item->{ec_sku}."'>
+            <input type='hidden' name='ec_quantity' value='1'>
             <input type='submit' value = '+1'>
             </form>
           </td>

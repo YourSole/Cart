@@ -24,12 +24,6 @@ if ($@) {
 my (undef, $dbfile) = tempfile(SUFFIX => '.db');
 
 t::lib::TestApp1::set plugins => {
-    'Cart' => {
-      product_name => 'EcProduct',
-      product_filter => "{ sku => { 'like', '%SU0%'} }",
-      product_order => "{ -asc => 'sku' }",
-      'ppp' => 'test'
-    },
     DBIC => {
         foo => {
             dsn =>  "dbi:SQLite:dbname=$dbfile",
@@ -128,15 +122,27 @@ subtest 'Add product' => sub {
   $req = POST $site . '/cart/add', [ 'ec_sku' => "SU03", 'ec_quantity' => '1' ];
   $jar->add_cookie_header($req);
   $res = $test->request( $req );
-
-
   $req = GET $site . '/cart';
   $jar->add_cookie_header($req);
   $res = $test->request( $req );
   like(
     $res->content, qr/>2</, 'Cart has SU03 with 2 items'
-  ); 
-  
+  );
+};
+
+subtest "hooks add product" => sub {
+  my $req = POST $site . '/cart/add', [ 'ec_sku' => "SU01", 'ec_quantity' => '1' ];
+  $jar->add_cookie_header($req);
+  my $res = $test->request( $req );
+  $req = GET $site . '/cart';
+  $jar->add_cookie_header($req);
+  $res = $test->request( $req );
+  like(
+    $res->content, qr/>SUNN</, 'Cart has SUNN'
+  );
+  like(
+    $res->content, qr/<td>-1<\/td>/, 'Cart has SUNN with price -1'
+  );
 };
 
 subtest 'Products sort and filtered' => sub {

@@ -56,7 +56,7 @@ sub create_products_view{
   <table>
     <thead>
       <tr>
-        <th>Sku</th><th>Action</th>
+        <th>Sku</th><th>Price</th><th>Action</th>
       </tr>
     </thead>
     <tbody>";
@@ -64,9 +64,10 @@ sub create_products_view{
     $open_t FOREACH product IN products $close_t
       <tr>
         <td> $open_t product.ec_sku $close_t </td>
+        <td> $open_t product.ec_price $close_t </td>
         <td>
           <form method='post' action='cart/add'>
-            <input type='hidden' name='sku' value='$open_t product.ec_sku $close_t'>
+            <input type='hidden' name='ec_sku' value='$open_t product.ec_sku $close_t'>
             <input type='hidden' name='quantity' value='1'>
             <input type='submit' value = 'Add'>
           </form>
@@ -98,14 +99,14 @@ sub create_cart_view{
         <tr>
           <td>  $open_t item.ec_sku $close_t </td>
           <td><form method='post' action='cart/add'>
-            <input type='hidden' name='sku' value='$open_t item.ec_sku $close_t'>
+            <input type='hidden' name='ec_sku' value='$open_t item.ec_sku $close_t'>
             <input type='hidden' name='quantity' value='-1'>
             <input type='submit' value = '-1'>
             </form>
           </td>
           <td>$open_t item.ec_quantity  $close_t </td>
           <td><form method='post' action='cart/add'>
-            <input type='hidden' name='sku' value='$open_t item.ec_sku $close_t'>
+            <input type='hidden' name='ec_sku' value='$open_t item.ec_sku $close_t'>
             <input type='hidden' name='quantity' value='1'>
             <input type='submit' value = '+1'>
             </form>
