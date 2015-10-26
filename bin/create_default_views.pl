@@ -121,6 +121,9 @@ sub create_cart_view{
         </tr>
       </tfoot>
     </table>
+    $open_t FOREACH error = ec_cart.add.error $close_t
+      <p> $open_t error $close_t </p>
+    $open_t END $close_t
     <p><a href='cart/clear'> Clear your cart. </a></p>
     <p><a href='cart/shipping'> Checkout </a></p>
   $open_t ELSE $close_t
@@ -158,8 +161,8 @@ sub create_shipping_view{
       </tfoot>
     </table>
   <p> <a href='../products'>Continue shopping</a> </p>
-  $open_t IF ec_cart.shipping.error $close_t
-    <p> $open_t ec_cart.shipping.error $close_t </p>
+  $open_t FOREACH error = ec_cart.shipping.error $close_t
+    <p> $open_t error $close_t </p>
   $open_t END $close_t
   <p>Shipping info</p>
   <form method='post' action='shipping'>
@@ -172,8 +175,8 @@ sub create_billing_view{
   my $page = "";
   $page .= "
   <h1>Billing</h1>
-  $open_t IF ec_cart.billiing.error $close_t
-    <p> $open_t ec_cart.billing.error $close_t </p>
+  $open_t FOREACH error = ec_cart.billing.error $close_t
+    <p> $open_t error $close_t </p>
   $open_t END $close_t
   <p> <a href='../products'>Continue shopping</a> </p>
   <p>Billing info</p>
