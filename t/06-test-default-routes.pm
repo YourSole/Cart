@@ -168,9 +168,9 @@ subtest 'Shipping info' => sub {
   $req = POST $site.'/cart/shipping'; 
   $jar->add_cookie_header( $req );
   $res = $test->request ( $req ); 
-  is( $res->{_rc}, '302','Get content /cart/shipping');
+  is( $res->{_rc}, '302','Redirect to get /cart/shipping');
   like(
-    $res->headers->{location}, qr/shipping/, 'Validates redirects location to shipping'
+    $res->request->uri, qr/shipping/, 'Validates redirects location to shipping'
   );
 
   $req = POST $site.'/cart/shipping', [ 'ship_mode' => "2" ];

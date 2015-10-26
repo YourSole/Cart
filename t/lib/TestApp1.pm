@@ -25,7 +25,7 @@ hook 'plugin.cart.validate_shipping_params' => sub {
   }
   else{
     my $ec_cart = session->read('ec_cart');
-    $ec_cart->{shipping}->{error} = "shipmode not selected";
+    push @{$ec_cart->{shipping}->{error}}, "shipmode not selected";
     session->write('ec_cart', $ec_cart );
   }
 };

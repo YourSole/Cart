@@ -35,6 +35,11 @@ sub _cart_view{
   my ($params) = @_;
   my $page = "";
   my $cart = $params->{cart};
+  if ( $ec_cart->{add}->{error} ){
+    foreach my $error ( @{$ec_cart->{add}->{error}} ){
+      $page .= "<p>".$error."</p>";
+    }
+  }
   $page .=  "<h1>Cart</h1>\n";
   if (@{$cart->{items}} > 0 ) {
     $page .= "<a href='products'> Continue shopping. </a>\n";
@@ -112,10 +117,10 @@ sub _shipping_view{
     </tr>
   </table>
   <p> <a href='../products'>Continue shopping</a> </p>";
-
-  
   if ( $ec_cart->{shipping}->{error} ){
-    $page .= "<p>".$ec_cart->{shipping}->{error}."</p>";
+    foreach my $error ( @{$ec_cart->{shipping}->{error}} ){
+      $page .= "<p>".$error."</p>";
+    }
   }
   $page .= "
     <p>Shipping info</p>
@@ -135,7 +140,9 @@ sub _billing_view{
   $page .= "
   <h1>Billing</h1>";
   if ( $ec_cart->{billing}->{error} ){
-    $page .= "<p>".$ec_cart->{billing}->{error}."</p>";
+    foreach my $error ( @{$ec_cart->{billing}->{error}} ){
+      $page .= "<p>".$error."</p>";
+    }
   }
   $page .= "
     <p>Billing info</p>

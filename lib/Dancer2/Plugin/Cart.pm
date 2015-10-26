@@ -175,14 +175,19 @@ sub BUILD {
         #Generate session if didn't exists
         $app->session;
         my $template = $self->cart_view_template || '/cart/cart.tt' ;
+        my $page = "";
         if( -e $self->app->config->{views}.$template ) {
-          $app->template(  $template, {
+          $page = $app->template(  $template, {
             cart => $cart
           } );
         }
         else{
-           _cart_view({ cart => $cart, product_pk => $self->product_pk });
+           $page = _cart_view({ cart => $cart, product_pk => $self->product_pk });
         }
+        my $ec_cart = $app->session->read('ec_cart');
+        delete $ec_cart->{add}->{error} if $ec_cart->{add}->{error};
+        $app->session->write( 'ec_cart', $ec_cart );
+        $page;
       }
     );
 
@@ -334,7 +339,7 @@ sub products {
   while( my $product = $products->next ){
     my $ec_sku = $self->product_pk;
     my $ec_price = $self->product_price;
-    push @{$arr}, { $product->get_columns, ec_sku => $product->$ec_sku, ec_price => $product->$ec_price };
+    push @{$arr}, { $product->get_columns, ec_sku => $product->$ec_sku, ec_price => $product->$ec_price || 0 };
   }
   $arr;
 }
@@ -358,11 +363,14 @@ sub cart_add {
     }
   } 
   else{
+    my $cart_id = $self->cart( $params )->{id};
+    my $place = $self->dbic->schema($schema)->resultset($self->cart_product_name)->search({ cart_id=> $cart_id })->get_column('place')->max() || 0;
      $cart_product = $self->dbic->schema($schema)->resultset($self->cart_product_name)->create({
-      cart_id =>  $self->cart( $params )->{id},
+      cart_id => $cart_id, 
       sku => $product->{ec_sku},
       price => $product->{ec_price} || 0,
       quantity => $product->{ec_quantity} || 0,
+      place => $place + 1,
     });
   }
   return $cart_product ? { $cart_product->get_columns } : { error => "Error trying to create CartProduct."};
@@ -405,6 +413,9 @@ sub cart_items {
     { 
       cart_id => $cart_id,
     },
+    {
+      order_by => { '-asc' => 'place' }
+    }
   );
   while( my $ci = $cart_items->next ){
     my $product =  $self->dbic->schema->resultset($self->product_name)->search({ $self->product_pk => $ci->sku })->single;
@@ -465,7 +476,7 @@ sub execute_cart_add {
   $ec_cart = $app->session->read('ec_cart');
 
   if ( $ec_cart->{add}->{error} ){
-    $self->app->redirect( $app->request->referer );
+    $self->app->redirect( $app->request->referer || $app->request->uri  );
   }
   else{
     #Cart operations before add product to the cart.
@@ -473,10 +484,9 @@ sub execute_cart_add {
     $ec_cart = $app->session->read('ec_cart');
 
     if ( $ec_cart->{add}->{error} ){
-      $self->app->redirect( $app->request->referer );
+      $self->app->redirect( $app->request->referer || $app->request->uri  );
     }
     else{
-      
       $product = $self->cart_add({
           ec_sku => $ec_cart->{add}->{form}->{'ec_sku'},
           ec_quantity => $ec_cart->{add}->{form}->{'ec_quantity'}
@@ -500,15 +510,16 @@ sub execute_shipping {
   $app->session->write( 'ec_cart', $ec_cart );
   $app->execute_hook( 'plugin.cart.validate_shipping_params' );
   $ec_cart = $app->session->read('ec_cart');
-  if ( $ec_cart->{shipping}->{error} ){
-    $app->redirect( $app->request->referer );
+  if ( $ec_cart->{shipping}->{error} ){ 
+    $app->redirect( $app->request->referer || $app->request->uri );
   }
   else{
     $app->execute_hook( 'plugin.cart.before_shipping' );
     my $ec_cart = $app->session->read('ec_cart');
 
     if ( $ec_cart->{shipping}->{error} ){
-      $app->redirect( $app->request->referer );
+      
+      $app->redirect( ''.$app->request->referer || $app->request->uri  );
     }
     else{  
       $app->execute_hook( 'plugin.cart.get_rates' );
@@ -529,14 +540,14 @@ sub execute_billing{
   $app->execute_hook( 'plugin.cart.validate_billing_params' );
   $ec_cart = $app->session->read('ec_cart');
   if ( $ec_cart->{billing}->{error} ){
-    $app->redirect( $app->request->referer );
+    $app->redirect( $app->request->referer || $app->request->uri );
   }
   else{
     $app->execute_hook( 'plugin.cart.before_billing' );
     my $ec_cart = $app->session->read('ec_cart');
 
     if ( $ec_cart->{shipping}->{error} ){
-      $app->redirect( $app->request->referer );
+      $app->redirect( $app->request->referer || $app->request->uri  );
     }
     else{  
       $app->execute_hook( 'plugin.cart.billing' );
@@ -555,7 +566,7 @@ sub execute_checkout{
   my $ec_cart = $app->session->read('ec_cart');
 
   if ( $ec_cart->{checkout}->{error} ){
-    $app->redirect( $app->request->request_uri );
+    $app->redirect( $app->request->referer || $app->request->uri  );
   }
   else{
     $app->execute_hook( 'plugin.cart.before_checkout' ); 
