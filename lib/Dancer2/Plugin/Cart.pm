@@ -5,141 +5,151 @@ use Dancer2::Plugin2;
 use Dancer2::Plugin::Cart::InlineViews;
 our $VERSION = '0.0001';  #Version
 
-has 'dbic' => (
+BEGIN{
+  has 'dbic' => (
+      is => 'ro',
+      lazy => 1,
+      default => sub {
+          scalar $_[0]->app->with_plugin( 'DBIC' )
+      },
+      handles => { 'schema' => 'schema', 'resultset' => 'resultset' },
+  );
+
+
+  has 'cart_name' => (
     is => 'ro',
-    lazy => 1,
-    default => sub {
-        scalar $_[0]->app->with_plugins( 'DBIC' )
-    },
-    handles => { 'schema' => 'schema', 'resultset' => 'resultset' },
-);
+    from_config => 'cart_name',
+    default => sub { 'EcCart' }
+  );
 
+  has 'cart_product_name' => (
+    is => 'ro',
+    from_config => 'cart_product_name',
+    default => sub { 'EcCartProduct' }
+  );
 
-has 'cart_name' => (
-  is => 'ro',
-  from_config => 1,
-  default => sub { 'EcCart' }
-);
+  has 'product_name' => (
+    is => 'ro',
+    from_config => 'product_name',
+    default => sub { 'EcProduct' }
+  );
 
-has 'cart_product_name' => (
-  is => 'ro',
-  from_config => 'cart_product_name',
-  default => sub { 'EcCartProduct' }
-);
+  has 'product_pk' => (
+    is => 'ro',
+    from_config => 'product_pk',
+    default => sub { 'sku' }
+  );
 
-has 'product_name' => (
-  is => 'ro',
-  from_config => 'product_name',
-  default => sub { 'EcProduct' }
-);
+  has 'product_price' => (
+    is => 'ro',
+    from_config => 'product_price',
+    default => sub { 'price' }
+  );
 
-has 'product_pk' => (
-  is => 'ro',
-  from_config => 'product_pk',
-  default => sub { 'sku' }
-);
+  has 'product_filter' => (
+    is => 'ro',
+    from_config => 'product_filter',
+    default => sub { undef } 
+  );
 
-has 'product_price' => (
-  is => 'ro',
-  from_config => 'product_price',
-  default => sub { 'price' }
-);
+  has 'product_order' => (
+    is => 'ro',
+    from_config => 'product_order',
+    default => sub { undef }
+  );
 
-has 'product_filter' => (
-  is => 'ro',
-  from_config => 'product_filter',
-  default => sub { undef } 
-);
+  has 'products_view_template' => (
+    is => 'ro',
+    from_config => 'views.products',
+    default => sub {}
+  );
 
-has 'product_order' => (
-  is => 'ro',
-  from_config => 'product_order',
-  default => sub { undef }
-);
+  has 'cart_view_template' => (
+    is => 'ro',
+    from_config => 'views.products',
+    default => sub {}
+  );
 
-has 'products_view_template' => (
-  is => 'ro',
-  from_config => 'views.products',
-  default => sub {}
-);
+  has 'cart_receipt_template' => (
+    is => 'ro',
+    from_config => 'views.receipt',
+    default => sub {}
+  );
 
-has 'cart_view_template' => (
-  is => 'ro',
-  from_config => 'views.products',
-  default => sub {}
-);
+  has 'cart_checkout_template' => (
+    is => 'ro',
+    from_config => 'views.checkout',
+    default => sub {}
+  );
 
-has 'cart_receipt_template' => (
-  is => 'ro',
-  from_config => 'views.receipt',
-  default => sub {}
-);
+  has 'shipping_view_template' => (
+    is => 'ro',
+    from_config => 'views.shipping',
+    default => sub {}
+  );
 
-has 'cart_checkout_template' => (
-  is => 'ro',
-  from_config => 'views.checkout',
-  default => sub {}
-);
+  has 'billing_view_template' => (
+    is => 'ro',
+    from_config => 'views.billing',
+    default => sub {}
+  );
 
-has 'shipping_view_template' => (
-  is => 'ro',
-  from_config => 'views.shipping',
-  default => sub {}
-);
+  has 'review_view_template' => (
+    is => 'ro',
+    from_config => 'views.review',
+    default => sub {}
+  );
 
-has 'billing_view_template' => (
-  is => 'ro',
-  from_config => 'views.billing',
-  default => sub {}
-);
+  has 'receipt_view_template' => (
+    is => 'ro',
+    from_config => 'views.receipt',
+    default => sub {}
+  );
 
-has 'review_view_template' => (
-  is => 'ro',
-  from_config => 'views.review',
-  default => sub {}
-);
+  has 'default_routes' => (
+    is => 'ro',
+    from_config => 1,
+    default => sub { '1' }
+  );
 
-has 'receipt_view_template' => (
-  is => 'ro',
-  from_config => 'views.receipt',
-  default => sub {}
-);
+  plugin_keywords qw/ 
+    products
+    cart
+    cart_add
+    cart_add_item
+    cart_items
+    clear_cart
+    subtotal
+    billing
+    shipping
+    checkout
+    place_order
+  /;
 
-has 'default_routes' => (
-  is => 'ro',
-  from_config => 1,
-  default => sub { '1' }
-);
-
-plugin_keywords qw/ 
-  products
-  cart_add
-  execute_cart_add
-  cart 
-  clear_cart
-  subtotal
-  place_order
-/;
-
-plugin_hooks qw/
-  validate_cart_add_params
-  before_cart_add
-  after_cart_add
-  validate_shipping_params
-  before_shipping
-  get_rates 
-  after_shipping
-  validate_billing_params
-  before_billing
-  billing
-  after_billing
-  validate_checkout_params
-  before_checkout
-  after_checkout
-  before_clear_cart
-  after_clear_cart
-/;
-
+  plugin_hooks qw/
+    validate_cart_add_params
+    before_cart_add
+    after_cart_add
+    validate_shipping_params
+    before_shipping
+    get_rates 
+    after_shipping
+    validate_billing_params
+    before_billing
+    billing
+    after_billing
+    validate_checkout_params
+    before_checkout
+    after_checkout
+    before_clear_cart
+    after_clear_cart
+    before_item_subtotal
+    after_item_subtotal
+    before_subtotal
+    after_subtotal
+    taxes
+  /;
+}
 
 sub BUILD {
   my $self = shift;
@@ -196,7 +206,8 @@ sub BUILD {
       regexp => '/cart/add',
       code => sub {
         my $app = shift;
-        $self->execute_cart_add;
+        $self->cart_add;
+        $app->redirect('/cart');
       }
     );
 
@@ -205,7 +216,8 @@ sub BUILD {
       regexp => '/cart/clear',
       code => sub {
         my $app = shift;
-        $self->execute_clear_cart;
+        $self->clear_cart;
+        $app->redirect('/cart');
       } 
     );
 
@@ -237,7 +249,7 @@ sub BUILD {
       method => 'post',
       regexp => '/cart/shipping',
       code => sub {
-        $self->execute_shipping;
+        $self->shipping;
       }
     );
 
@@ -264,7 +276,7 @@ sub BUILD {
       method => 'post',
       regexp => '/cart/billing',
       code => sub {
-        $self->execute_billing; 
+        $self->billing; 
       }
     );
     
@@ -296,7 +308,7 @@ sub BUILD {
       method => 'post',
       regexp => '/cart/checkout',
       code => sub {
-        $self->execute_checkout;
+        $self->checkout;
       }
     );
 
@@ -343,7 +355,7 @@ sub products {
   }
   $arr;
 }
-sub cart_add {
+sub cart_add_item {
   my ( $self, $product, $params ) = @_;
   my ( $name, $schema ) = _parse_params($params);
 
@@ -379,6 +391,7 @@ sub cart_add {
 sub cart {
   my ($self, $params ) = @_;
   my ($name, $schema, $status, $cart_id) = _parse_params($params);
+  my $app = $self->app;
   my $cart_info = {
     session => $self->app->session->{'id'},
   };
@@ -392,7 +405,6 @@ sub cart {
   }
   
   my $cart = undef;
-
   if ( $cart_info->{status} == 0 ){
     $cart = $self->dbic->schema($schema)->resultset($self->cart_name)->find_or_create($cart_info);
   }
@@ -400,15 +412,29 @@ sub cart {
     $cart = $self->schema($schema)->resultset($self->cart_name)->search($cart_info)->first;
   }
   $params->{cart_id} = $cart->id if $cart;
+
+  my $ec_cart = $app->session->read('ec_cart');
+  $ec_cart->{cart} = { $cart->get_columns } if $cart;
+  $app->session->write( 'ec_cart', $ec_cart );
+
+  #Get cart items
   my $cart_items = $self->cart_items ( $params );
-  return { $cart->get_columns, items => $cart_items->{items} , subtotal => $cart_items->{subtotal} } if $cart;
+ 
+  #get subtotal
+  my $subtotal = $self->subtotal;
+
+  $app->execute_hook('plugin.cart.taxes');
+  $ec_cart = $app->session->read('ec_cart');
+  
+  return { $cart->get_columns, items => $ec_cart->{cart}->{items} , subtotal => $ec_cart->{cart}->{subtotal} } if $cart;
+
 };
 
 sub cart_items {
   my ( $self, $params ) = @_;
   my ($name, $schema, $status, $cart_id ) = _parse_params($params);
-
-  my $arr = [];
+  my $app = $self->app;
+  my $arr_items = [];
   my $cart_items = $self->dbic->schema($schema)->resultset($self->cart_product_name)->search( 
     { 
       cart_id => $cart_id,
@@ -417,50 +443,94 @@ sub cart_items {
       order_by => { '-asc' => 'place' }
     }
   );
+
   while( my $ci = $cart_items->next ){
-    my $product =  $self->dbic->schema->resultset($self->product_name)->search({ $self->product_pk => $ci->sku })->single;
+    my $product =  $self->dbic->schema($schema)->resultset($self->product_name)->search({ $self->product_pk => $ci->sku })->single;
+
+    my $item_subtotal = $self->item_subtotal( { ec_sku => $ci->sku, ec_quantity => $ci->quantity, ec_price => $ci->price } ) || 0;
+    
     if ($product) {
-      push @{$arr}, {$product->get_columns, ec_sku => $ci->sku , ec_quantity => $ci->quantity, ec_price  => $ci->price };
+      push @{$arr_items}, { $product->get_columns, ec_sku => $ci->sku , ec_quantity => $ci->quantity, ec_price  => $ci->price, ec_subtotal => $item_subtotal  };
     }
     else{
-      push @{$arr}, { ec_sku => $ci->sku , ec_quantity => $ci->quantity, ec_price  => $ci->price };
+      push @{$arr_items}, { ec_sku => $ci->sku , ec_quantity => $ci->quantity, ec_price  => $ci->price, ec_subtotal => $item_subtotal };
     }
-  }
-  return { items => $arr };
+  } 
+
+  my $ec_cart = $app->session->read('ec_cart');
+  $ec_cart->{cart}->{items} = $arr_items;
+  $app->session->write( 'ec_cart', $ec_cart );
+  
+  return { items => $ec_cart->{cart}->{items} };
 };
+
+sub item_subtotal{
+  my ($self, $params) = @_;
+  my $app = $self->app;
+  my $subtotal = 0;
+  my $ec_cart = $app->session->read('ec_cart');
+
+  $ec_cart->{item} = $params;
+  $app->session->write( 'ec_cart', $ec_cart );
+
+  $app->execute_hook('plugin.cart.before_item_subtotal');
+  $ec_cart = $app->session->read('ec_cart');
+
+  $ec_cart->{item}->{subtotal} = $ec_cart->{item}->{ec_price} * $ec_cart->{item}->{ec_quantity};
+  $app->session->write( 'ec_cart', $ec_cart );
+
+  $app->execute_hook('plugin.cart.after_item_subtotal');
+  $ec_cart = $app->session->read('ec_cart');
+  $subtotal = $ec_cart->{item}->{subtotal};
+
+  delete $ec_cart->{item};
+
+  $app->session->write( 'ec_cart', $ec_cart );
+
+  $subtotal;
+};
+
+
+sub subtotal{
+  my ($self, $params) = @_;
+  my ($name,$schema) = _parse_params($params);
+  my $app = $self->app;
+
+  $self->execute_hook ('plugin.cart.before_subtotal');
+
+  my $ec_cart = $app->session->read('ec_cart');
+  my $subtotal = 0;
+
+  foreach my $item_subtotal ( @{ $ec_cart->{cart}->{items} } ){
+    $subtotal += $item_subtotal->{ec_subtotal};
+  }
+
+  $ec_cart->{cart}->{subtotal} = $subtotal;
+  $app->session->write('ec_cart',$ec_cart);
+  $self->execute_hook ('plugin.cart.after_subtotal');
+  $ec_cart = $app->session->read('ec_cart');
+  $ec_cart->{cart}->{subtotal};
+}
 
 
 sub clear_cart {
   my ($self, $params ) = @_;
   my ($name, $schema) = _parse_params($params);
 
+  $self->execute_hook ('plugin.cart.before_clear_cart');
   #get cart_id
-  my $cart_id = cart($self, { name => $name, schema => $schema })->{id}; 
+  my $cart_id = $self->cart({ name => $name, schema => $schema })->{id}; 
 
   #delete the cart_product info
   $self->schema($schema)->resultset($self->cart_product_name)->search({ cart_id => $cart_id })->delete_all;
   #delete products
   $self->schema($schema)->resultset($self->cart_name)->search({ id => $cart_id })->delete;
   $self->app->session->delete('ec_cart');
-}
-
-sub subtotal{
-  my ($self, $params) = @_;
-  my ($name,$schema) = _parse_params($params);
-  my $subtotal = 0;
-  my $cart_products = $self->schema($schema)->resultset($self->cart_product_name)->search(
-    {
-      cart_id => $self->cart( $params )->{id},
-    },
-  );
-  while( my $ci = $cart_products->next ){
-    $subtotal += $ci->price * $ci->quantity;
-  }
-  $subtotal;
+  $self->execute_hook ('plugin.cart.after_clear_cart');
 }
 
 
-sub execute_cart_add {
+sub cart_add {
   my $self = shift;
   my $app = $self->app;
   my $params = { $app->request->params };
@@ -487,7 +557,7 @@ sub execute_cart_add {
       $self->app->redirect( $app->request->referer || $app->request->uri  );
     }
     else{
-      $product = $self->cart_add({
+      $product = $self->cart_add_item({
           ec_sku => $ec_cart->{add}->{form}->{'ec_sku'},
           ec_quantity => $ec_cart->{add}->{form}->{'ec_quantity'}
         }
@@ -500,7 +570,7 @@ sub execute_cart_add {
   }
 }
 
-sub execute_shipping {
+sub shipping {
   my $self = shift;
   my $app = $self->app;
   my $params = { $app->request->params };
@@ -529,7 +599,7 @@ sub execute_shipping {
   }
 }
 
-sub execute_billing{
+sub billing{
   my $self = shift;
   my $app = $self->app;
   my $params = { $app->request->params };
@@ -546,7 +616,7 @@ sub execute_billing{
     $app->execute_hook( 'plugin.cart.before_billing' );
     my $ec_cart = $app->session->read('ec_cart');
 
-    if ( $ec_cart->{shipping}->{error} ){
+    if ( $ec_cart->{billing}->{error} ){
       $app->redirect( $app->request->referer || $app->request->uri  );
     }
     else{  
@@ -557,7 +627,7 @@ sub execute_billing{
   }
 }
 
-sub execute_checkout{
+sub checkout{
   my $self = shift;
   my $app = $self->app;
 
@@ -578,15 +648,6 @@ sub execute_checkout{
   }
 }
 
-sub execute_clear_cart{
-  my $self = shift;
-  my $app = $self->app;
-  $self->execute_hook ('plugin.cart.before_clear_cart');
-  $self->clear_cart;
-  $self->execute_hook ('plugin.cart.after_clear_cart');
-  $self->app->redirect( '/cart' );
-}
-
 sub place_order{
   my ($self, $params) = @_;
   my ($name, $schema) = _parse_params($params);
@@ -604,15 +665,8 @@ sub place_order{
     log => Dancer2::Serializer::JSON::to_json( {
       data => $app->session->{data},
       session => $app->session->{id},
-      items => $self->cart_items(
-        { 
-          cart_id => $self->cart( { name => $name, schema => $schema } )->{id}, 
-          schema => $schema 
-        } 
-      ),
-      subtotal => $self->subtotal( { name => $name, schema => $schema } ) },
-    )
-,
+      cart => $app->session->{ec_cart}
+    })
   });
   $cart_temp->id;
 }

@@ -60,7 +60,8 @@ my @sql = (
   'cart_id' INTEGER NOT NULL,
   'sku'  TEXT NOT NULL,
   'price' NUMERIC NOT NULL,
-  'quantity'  INTEGER NOT NULL
+  'quantity'  INTEGER NOT NULL,
+  'place'  INTEGER NOT NULL
 );",
 
 "INSERT INTO EC_PRODUCT values ('SU03','Product1','10.00','description of the product1')",

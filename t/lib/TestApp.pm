@@ -21,13 +21,13 @@ get '/cart/new/:cart_new?' => sub {
 
 post '/cart/add_product' => sub {
   my $product = { ec_sku => param('ec_sku'), ec_quantity => param('ec_quantity') };
-  my $res = cart_add($product);
+  my $res = cart_add_item($product);
   $res->{error} ? $res->{error} : Dumper($res);
 };
 
 post '/cart/add_product_bar' => sub {
   my $product = { ec_sku => param('ec_sku'), ec_quantity => param('ec_quantity') };
-  my $res = cart_add($product, { schema => 'bar' });
+  my $res = cart_add_item($product, { schema => 'bar' });
   $res->{error} ? $res->{error} : Dumper($res);
 };
 
