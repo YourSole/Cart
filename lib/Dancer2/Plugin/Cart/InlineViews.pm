@@ -34,14 +34,14 @@ sub _products_view{
 sub _cart_view{
   my ($params) = @_;
   my $page = "";
-  my $cart = $params->{cart};
+  my $ec_cart = $params->{ec_cart};
   if ( $ec_cart->{add}->{error} ){
     foreach my $error ( @{$ec_cart->{add}->{error}} ){
       $page .= "<p>".$error."</p>";
     }
   }
   $page .=  "<h1>Cart</h1>\n";
-  if (@{$cart->{items}} > 0 ) {
+  if (@{$ec_cart->{cart}->{items}} > 0 ) {
     $page .= "<a href='products'> Continue shopping. </a>\n";
     $page .= "
     <table>
@@ -51,7 +51,7 @@ sub _cart_view{
         </tr>
       </thead>
       <tbody>";
-    foreach my $item (@{$cart->{items}}){
+    foreach my $item (@{$ec_cart->{cart}->{items}}){
       $page .= "
         <tr>
           <td>".$item->{ec_sku}."</td>
@@ -75,7 +75,7 @@ sub _cart_view{
       </tbody>
       <tfoot>
         <tr>
-          <td colspan=4>Subtotal</td><td>".$cart->{subtotal}."</td>
+          <td colspan=4>Subtotal</td><td>".$ec_cart->{cart}->{subtotal}."</td>
         </tr>
       </tfoot>
     </table>";
@@ -91,7 +91,6 @@ sub _cart_view{
 
 sub _shipping_view{
   my ($params) = @_;
-  my $cart = $params->{cart};
   my $ec_cart = $params->{ec_cart};
 
   my $page ="";
@@ -103,7 +102,7 @@ sub _shipping_view{
     <tr>
       <th>SKU</th><th>Quantity</th><th>Price</th>
     </tr>";
-  foreach my $item ( @{$cart->{items}} ){ 
+  foreach my $item ( @{$ec_cart->{cart}->{items}} ){ 
   $page .= "
     <tr>
       <td>".$item->{ec_sku}."</td>
@@ -113,7 +112,7 @@ sub _shipping_view{
   };
   $page .= "
     <tr>
-      <td>Subtotal</td><td>".$cart->{subtotal}."</td>
+      <td>Subtotal</td><td>".$ec_cart->{cart}->{subtotal}."</td>
     </tr>
   </table>
   <p> <a href='../products'>Continue shopping</a> </p>";
@@ -132,7 +131,6 @@ sub _shipping_view{
 
 sub _billing_view{
   my ($params) = @_;
-  my $cart = $params->{cart};
   my $ec_cart = $params->{ec_cart};
 
   my $page ="";
@@ -155,7 +153,6 @@ sub _billing_view{
 
 sub _review_view{
   my ($params) = @_;
-  my $cart = $params->{cart};
   my $ec_cart = $params->{ec_cart};
 
   $page = "
@@ -165,7 +162,7 @@ sub _review_view{
       <tr>
         <th>SKU</th><th>Quantity</th><th>Price</th>
       </tr>";
-      foreach my $item ( @{$cart->{items}} ){ 
+      foreach my $item ( @{$ec_cart->{cart}->{items}} ){ 
       $page .= "
         <tr>
           <td>".$item->{ec_sku}."</td>
@@ -175,7 +172,7 @@ sub _review_view{
       };
       $page .= "
       <tr>
-        <td colspan=2>Subtotal</td><td>".$cart->{subtotal}."</td>
+        <td colspan=2>Subtotal</td><td>".$ec_cart->{cart}->{subtotal}."</td>
       </tr>
     </table>
     

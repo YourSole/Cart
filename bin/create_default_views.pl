@@ -84,7 +84,7 @@ sub create_products_view{
 sub create_cart_view{
   my $page = "";
   $page .=  "<h1>Cart</h1>
-  $open_t IF cart.items.size $close_t";
+  $open_t IF ec_cart.cart.items.size $close_t";
     $page .= "<a href='products'> Continue shopping. </a>\n";
 
     $page .= "
@@ -95,19 +95,19 @@ sub create_cart_view{
         </tr>
       </thead>
       <tbody>
-    $open_t FOREACH item IN cart.items $close_t
+    $open_t FOREACH item IN ec_cart.cart.items $close_t
         <tr>
           <td>  $open_t item.ec_sku $close_t </td>
           <td><form method='post' action='cart/add'>
             <input type='hidden' name='ec_sku' value='$open_t item.ec_sku $close_t'>
-            <input type='hidden' name='quantity' value='-1'>
+            <input type='hidden' name='ec_quantity' value='-1'>
             <input type='submit' value = '-1'>
             </form>
           </td>
           <td>$open_t item.ec_quantity  $close_t </td>
           <td><form method='post' action='cart/add'>
             <input type='hidden' name='ec_sku' value='$open_t item.ec_sku $close_t'>
-            <input type='hidden' name='quantity' value='1'>
+            <input type='hidden' name='ec_quantity' value='1'>
             <input type='submit' value = '+1'>
             </form>
           </td>
@@ -117,7 +117,7 @@ sub create_cart_view{
       </tbody>
       <tfoot>
         <tr>
-          <td colspan=4>Subtotal</td><td>$open_t cart.subtotal $close_t</td>
+          <td colspan=4>Subtotal</td><td>$open_t ec_cart.cart.subtotal $close_t</td>
         </tr>
       </tfoot>
     </table>
@@ -146,7 +146,7 @@ sub create_shipping_view{
         </tr>
       </thead>
       <tbody>
-    $open_t FOREACH item IN cart.items $close_t
+    $open_t FOREACH item IN ec_cart.cart.items $close_t
         <tr>
           <td>  $open_t item.ec_sku $close_t </td>
           <td>$open_t item.ec_quantity  $close_t </td>
@@ -198,9 +198,9 @@ sub create_review_view{
         </tr>
       </thead>
       <tbody>
-    $open_t FOREACH item IN cart.items $close_t
+    $open_t FOREACH item IN ec_cart.cart.items $close_t
         <tr>
-          <td>  $open_t item.ec_sku $close_t </td>
+          <td>$open_t item.ec_sku $close_t </td>
           <td>$open_t item.ec_quantity  $close_t </td>
           <td>$open_t item.ec_price $close_t </td>
         </tr>
@@ -208,7 +208,7 @@ sub create_review_view{
       </tbody>
       <tfoot>
         <tr>
-          <td colspan=2>Subtotal</td><td>$open_t cart.subtotal $close_t</td>
+          <td colspan=2>Subtotal</td><td>$open_t ec_cart.cart.subtotal $close_t</td>
         </tr>
       </tfoot>
     </table>

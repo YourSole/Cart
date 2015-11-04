@@ -6,6 +6,7 @@ use Dancer2::Plugin::Cart::InlineViews;
 our $VERSION = '0.0001';  #Version
 
 BEGIN{
+
   has 'dbic' => (
       is => 'ro',
       lazy => 1,
@@ -14,7 +15,6 @@ BEGIN{
       },
       handles => { 'schema' => 'schema', 'resultset' => 'resultset' },
   );
-
 
   has 'cart_name' => (
     is => 'ro',
@@ -127,6 +127,8 @@ BEGIN{
   /;
 
   plugin_hooks qw/
+    before_cart
+    after_cart
     validate_cart_add_params
     before_cart_add
     after_cart_add
@@ -188,11 +190,11 @@ sub BUILD {
         my $page = "";
         if( -e $self->app->config->{views}.$template ) {
           $page = $app->template(  $template, {
-            cart => $cart
+            ec_cart => $app->session->read('ec_cart'),
           } );
         }
         else{
-           $page = _cart_view({ cart => $cart, product_pk => $self->product_pk });
+           $page = _cart_view({ ec_cart => $app->session->read('ec_cart') });
         }
         my $ec_cart = $app->session->read('ec_cart');
         delete $ec_cart->{add}->{error} if $ec_cart->{add}->{error};
@@ -231,12 +233,11 @@ sub BUILD {
         my $page = "";
         if( -e $app->config->{views}.$template ) {
             $page = $app->template ($template, {
-            cart => $cart,
             ec_cart => $app->session->read('ec_cart'),
           });
         }
         else{
-          $page = _shipping_view({ cart => $cart, ec_cart => $app->session->read('ec_cart') });
+          $page = _shipping_view({ ec_cart => $app->session->read('ec_cart') });
         }
         my $ec_cart = $app->session->read('ec_cart');
         delete $ec_cart->{shipping}->{error} if $ec_cart->{shipping}->{error};
@@ -260,15 +261,19 @@ sub BUILD {
         my $app = shift;
         my $cart = $self->cart;
         my $template = $self->billing_view_template || '/cart/billing.tt' ;
+        my $page = "";
         if( -e $app->config->{views}.$template ) {
-            $app->template( $template, {
-              cart => $cart,
-              ec_cart => $app->session->read('ec_cart'),
-            });
+            $page = $app->template( $template, {
+            ec_cart => $app->session->read('ec_cart'),
+          });
         }
         else{
-          _billing_view({ ec_cart => $app->session->read('ec_cart') });
+          $page = _billing_view({ ec_cart => $app->session->read('ec_cart') });
         }
+        my $ec_cart = $app->session->read('ec_cart');
+        delete $ec_cart->{billing}->{error} if $ec_cart->{billing}->{error};
+        $app->session->write( 'ec_cart', $ec_cart );
+        $page;
       }
     );
 
@@ -290,7 +295,6 @@ sub BUILD {
         my $template = $self->review_view_template || '/cart/review.tt' ;
         if( -e $app->config->{views}.$template ) {
             $page = $app->template($template,{
-              cart => $cart,
               ec_cart => $app->session->read('ec_cart'),
             });
         }
@@ -404,6 +408,7 @@ sub cart {
     delete $cart_info->{session};
   }
   
+  $app->execute_hook('plugin.cart.before_cart');
   my $cart = undef;
   if ( $cart_info->{status} == 0 ){
     $cart = $self->dbic->schema($schema)->resultset($self->cart_name)->find_or_create($cart_info);
@@ -426,6 +431,7 @@ sub cart {
   $app->execute_hook('plugin.cart.taxes');
   $ec_cart = $app->session->read('ec_cart');
   
+  $app->execute_hook('plugin.cart.after_cart');
   return { $cart->get_columns, items => $ec_cart->{cart}->{items} , subtotal => $ec_cart->{cart}->{subtotal} } if $cart;
 
 };
@@ -544,7 +550,7 @@ sub cart_add {
   #Param validation
   $app->execute_hook( 'plugin.cart.validate_cart_add_params' );
   $ec_cart = $app->session->read('ec_cart');
-
+  
   if ( $ec_cart->{add}->{error} ){
     $self->app->redirect( $app->request->referer || $app->request->uri  );
   }
@@ -565,6 +571,9 @@ sub cart_add {
 
       #Cart operations after adding product to the cart
       $app->execute_hook( 'plugin.cart.after_cart_add' );
+      $ec_cart = $app->session->read('ec_cart');
+      delete $ec_cart->{add};
+      $app->session->write( 'ec_cart', $ec_cart );
       $self->app->redirect( '/cart' );
     }
   }
@@ -659,13 +668,13 @@ sub place_order{
   my $cart_temp = $self->dbic->schema($schema)->resultset($self->cart_name)->find($cart->{id});
   return { error => 'Cart not found' } unless $cart_temp;
   require Dancer2::Serializer::JSON;
-  
+
   $cart_temp->update({
     status => 1,
     log => Dancer2::Serializer::JSON::to_json( {
-      data => $app->session->{data},
       session => $app->session->{id},
-      cart => $app->session->{ec_cart}
+      data => $app->session->{data},
+      ec_cart => $app->session->read('ec_cart'),
     })
   });
   $cart_temp->id;
