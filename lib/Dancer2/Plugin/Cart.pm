@@ -124,6 +124,7 @@ BEGIN{
     shipping
     checkout
     place_order
+    adjustments
   /;
 
   plugin_hooks qw/
@@ -134,11 +135,9 @@ BEGIN{
     after_cart_add
     validate_shipping_params
     before_shipping
-    get_rates 
     after_shipping
     validate_billing_params
     before_billing
-    billing
     after_billing
     validate_checkout_params
     before_checkout
@@ -149,7 +148,7 @@ BEGIN{
     after_item_subtotal
     before_subtotal
     after_subtotal
-    taxes
+    adjustments
   /;
 }
 
@@ -250,7 +249,9 @@ sub BUILD {
       method => 'post',
       regexp => '/cart/shipping',
       code => sub {
+        my $app = shift;
         $self->shipping;
+        $app->redirect('/cart/billing');
       }
     );
 
@@ -281,7 +282,9 @@ sub BUILD {
       method => 'post',
       regexp => '/cart/billing',
       code => sub {
+        my $app = shift;
         $self->billing; 
+        $app->redirect('/cart/review');
       }
     );
     
@@ -312,7 +315,9 @@ sub BUILD {
       method => 'post',
       regexp => '/cart/checkout',
       code => sub {
+        my $app = shift;
         $self->checkout;
+        $app->redirect('/cart/receipt');
       }
     );
 
@@ -323,7 +328,9 @@ sub BUILD {
         my $app = shift;
         my $template = $self->receipt_view_template || '/cart/receipt.tt' ;
         my $ec_cart = $app->session->read('ec_cart');
-        $app->redirect('/products') unless $ec_cart->{cart}->{id};
+
+        $app->redirect('/') unless $ec_cart->{cart}->{id};
+
         my $cart = $self->cart( { status => 1, cart_id => $ec_cart->{cart}->{id} });
         require Dancer2::Serializer::JSON;
         $cart->{log} =  Dancer2::Serializer::JSON::from_json( $cart->{log} );
@@ -428,9 +435,12 @@ sub cart {
   #get subtotal
   my $subtotal = $self->subtotal;
 
-  $app->execute_hook('plugin.cart.taxes');
+  $self->adjustments;
   $ec_cart = $app->session->read('ec_cart');
-  
+
+  my $total = $self->get_total; 
+  $ec_cart = $app->session->read('ec_cart');
+
   $app->execute_hook('plugin.cart.after_cart');
   return { $cart->get_columns, items => $ec_cart->{cart}->{items} , subtotal => $ec_cart->{cart}->{subtotal} } if $cart;
 
@@ -563,9 +573,19 @@ sub cart_add {
       $self->app->redirect( $app->request->referer || $app->request->uri  );
     }
     else{
+      my $ec_price = $self->product_price;
+      use Data::Dumper;
+
+      my $product_temp = $self->dbic->schema->resultset($self->product_name)->search({ $self->product_pk => $ec_cart->{add}->{form}->{ec_sku}  })->single;
+      if ( $product_temp ){
+        my $ec_price = $self->product_price;
+        $ec_cart->{add}->{form}->{ec_price} = $product_temp->$ec_price;
+      }
+       
       $product = $self->cart_add_item({
           ec_sku => $ec_cart->{add}->{form}->{'ec_sku'},
-          ec_quantity => $ec_cart->{add}->{form}->{'ec_quantity'}
+          ec_quantity => $ec_cart->{add}->{form}->{'ec_quantity'},
+          ec_price => $ec_cart->{add}->{form}->{'ec_price'} || 0
         }
       );
 
@@ -574,7 +594,6 @@ sub cart_add {
       $ec_cart = $app->session->read('ec_cart');
       delete $ec_cart->{add};
       $app->session->write( 'ec_cart', $ec_cart );
-      $self->app->redirect( '/cart' );
     }
   }
 }
@@ -600,11 +619,7 @@ sub shipping {
       
       $app->redirect( ''.$app->request->referer || $app->request->uri  );
     }
-    else{  
-      $app->execute_hook( 'plugin.cart.get_rates' );
-    }
     $app->execute_hook( 'plugin.cart.after_shipping' );
-    $app->redirect('/cart/billing');
   }
 }
 
@@ -628,11 +643,7 @@ sub billing{
     if ( $ec_cart->{billing}->{error} ){
       $app->redirect( $app->request->referer || $app->request->uri  );
     }
-    else{  
-      $app->execute_hook( 'plugin.cart.billing' );
-    }
     $app->execute_hook( 'plugin.cart.after_billing' );
-    $app->redirect('/cart/review');
   }
 }
 
@@ -653,7 +664,6 @@ sub checkout{
     $app->session->delete( 'ec_cart' );
     $app->session->write('ec_cart',{ cart => { id => $cart_id } } );
     $app->execute_hook( 'plugin.cart.after_checkout' );
-    $app->redirect('/cart/receipt');
   }
 }
 
@@ -678,6 +688,32 @@ sub place_order{
     })
   });
   $cart_temp->id;
+}
+
+sub adjustments {
+  my ($self, $params) = @_;
+  my ($name, $schema) = _parse_params($params);
+  my $app = $self->app;
+
+  $app->execute_hook('plugin.cart.adjustments');
+}
+
+
+sub get_total {
+  my ($self) = shift;
+  my $app = $self->app;
+  my $total = 0;
+  my $ec_cart = $app->session->read('ec_cart');
+  
+  $total += $ec_cart->{cart}->{subtotal};
+  foreach my $adjustment ( @{$ec_cart->{cart}->{adjustments}}){
+    $total += $adjustment->{value};
+  }
+
+  $ec_cart->{cart}->{total} = $total;
+  $app->session->write('ec_cart', $ec_cart );
+
+  return $total;
 }
 
 sub _parse_params {

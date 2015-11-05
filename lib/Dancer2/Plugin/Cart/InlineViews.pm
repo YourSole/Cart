@@ -41,8 +41,18 @@ sub _cart_view{
     }
   }
   $page .=  "<h1>Cart</h1>\n";
+  $page .= _cart_info({ ec_cart => $ec_cart, editable => 1 });
+  $page .= "<a href='products'> Continue shopping. </a>\n";
+  $page;
+}
+
+sub _cart_info{
+  my ($params) = @_;
+  my $ec_cart = $params->{ec_cart};
+  my $editable = $params->{editable};
+
+  my $page = "";
   if (@{$ec_cart->{cart}->{items}} > 0 ) {
-    $page .= "<a href='products'> Continue shopping. </a>\n";
     $page .= "
     <table>
       <thead>
@@ -55,19 +65,25 @@ sub _cart_view{
       $page .= "
         <tr>
           <td>".$item->{ec_sku}."</td>
-          <td><form method='post' action='cart/add'>
+          <td>";
+          if( $editable == 1 ) {
+              $page .= "<form method='post' action='cart/add'>
             <input type='hidden' name='ec_sku' value='".$item->{ec_sku}."'>
             <input type='hidden' name='ec_quantity' value='-1'>
             <input type='submit' value = '-1'>
-            </form>
-          </td>
+            </form>" 
+          }
+          $page .= "</td>
           <td>". $item->{ec_quantity} ."</td>
-          <td><form method='post' action='cart/add'>
+          <td>";
+          if( $editable == 1 ){
+            $page .= "<form method='post' action='cart/add'>
             <input type='hidden' name='ec_sku' value='".$item->{ec_sku}."'>
             <input type='hidden' name='ec_quantity' value='1'>
             <input type='submit' value = '+1'>
-            </form>
-          </td>
+            </form>";
+          }
+          $page .= "</td>
           <td>".$item->{ec_price}."</td>
         </tr>";
     }
@@ -79,11 +95,36 @@ sub _cart_view{
         </tr>
       </tfoot>
     </table>";
+
+
+    $page .= '<table>
+      <tbody>';
+    
+    if ( @{$ec_cart->{cart}->{adjustments}} > 0  ){ 
+      foreach my $adjustment (@{$ec_cart->{cart}->{adjustments}}){
+        $page .= "<tr><td colspan=4>".$adjustment->{description}."</td><td>".$adjustment->{value}."</td></tr>"; 
+      }
+    }
+    else{
+      $page .= "<tr><td colspan=4>Discounts</td><td>0</td></tr>"; 
+      $page .= "<tr><td colspan=4>Shipping</td><td>0</td></tr>"; 
+      $page .= "<tr><td colspan=4>Taxes</td><td>0</td></tr>"; 
+    }
+
+    $page .= "
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan=4>Total</td><td>".$ec_cart->{cart}->{total}."</td>
+        </tr>
+      </tfoot>
+    </table>";
+
     $page .= "\n<p><a href='cart/clear'> Clear your cart. </a></p>";
     $page .= "\n<p><a href='cart/shipping'> Checkout. </a></p>";
   }
   else{
-    $page .= "Your cart is empty. <a href='products'> Continue shopping. </a>";
+    $page .= "Your cart is empty.";
   }
   $page;
 }
@@ -96,26 +137,8 @@ sub _shipping_view{
   my $page ="";
 
   $page .= "
-  <h1>Shipping</h1>
-  <h2>Cart info</h2>
-  <table>
-    <tr>
-      <th>SKU</th><th>Quantity</th><th>Price</th>
-    </tr>";
-  foreach my $item ( @{$ec_cart->{cart}->{items}} ){ 
-  $page .= "
-    <tr>
-      <td>".$item->{ec_sku}."</td>
-      <td>". $item->{ec_quantity} ."</td>
-      <td>".$item->{ec_price}."</td>
-    </tr>"; 
-  };
-  $page .= "
-    <tr>
-      <td>Subtotal</td><td>".$ec_cart->{cart}->{subtotal}."</td>
-    </tr>
-  </table>
-  <p> <a href='../products'>Continue shopping</a> </p>";
+  <h1>Shipping</h1>";
+  $page .= _cart_info({ ec_cart => $ec_cart });
   if ( $ec_cart->{shipping}->{error} ){
     foreach my $error ( @{$ec_cart->{shipping}->{error}} ){
       $page .= "<p>".$error."</p>";
@@ -137,6 +160,8 @@ sub _billing_view{
 
   $page .= "
   <h1>Billing</h1>";
+  $page .= _cart_info({ ec_cart => $ec_cart });
+
   if ( $ec_cart->{billing}->{error} ){
     foreach my $error ( @{$ec_cart->{billing}->{error}} ){
       $page .= "<p>".$error."</p>";
@@ -156,29 +181,9 @@ sub _review_view{
   my $ec_cart = $params->{ec_cart};
 
   $page = "
-    <h1>Review</h1>
-    <h2>Cart info</h2>
-    <table>
-      <tr>
-        <th>SKU</th><th>Quantity</th><th>Price</th>
-      </tr>";
-      foreach my $item ( @{$ec_cart->{cart}->{items}} ){ 
-      $page .= "
-        <tr>
-          <td>".$item->{ec_sku}."</td>
-          <td>". $item->{ec_quantity} ."</td>
-          <td>".$item->{ec_price}."</td>
-        </tr>"; 
-      };
-      $page .= "
-      <tr>
-        <td colspan=2>Subtotal</td><td>".$ec_cart->{cart}->{subtotal}."</td>
-      </tr>
-    </table>
-    
-    <p> <a href='../products'>Continue shopping</a> </p>
-
-    <table>
+    <h1>Review</h1>";
+  $page .= _cart_info({ ec_cart => $ec_cart });
+  $page .="<table>
       <tr><td>Shipping - email</td><td>".$ec_cart->{shipping}->{form}->{email}."</td></tr>
       <tr><td>Billing - email</td><td>".$ec_cart->{billing}->{form}->{email}."</td></tr>
     </table>
@@ -198,32 +203,9 @@ sub _receipt_view{
 
   $page .= "
   <p>Checkout has been successful!!</p>
-  <h1>Receipt #: ".$cart->{id}." </h1>
-  <h2>Cart Info</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>SKU</th><th>Quantity</th><th>Price</th>
-      </tr>
-    </thead>
-    <tbody>";
-  foreach my $item ( @{ $cart->{items} } ){
-    $page .= "
-      <tr>
-        <td>".$item->{ec_sku}."</td>
-        <td>". $item->{ec_quantity} ."</td>
-        <td>".$item->{ec_price}."</td>
-      </tr>";
-  }
-  $page .= "
-    </tbody>
-    <tfoot>
-      <tr>
-        <td colspan=2>Subtotal</td><td>".$cart->{subtotal}."</td>
-      </tr>
-    </tfoot>
-  </table>
-  <h2>Log Info</h2>
+  <h1>Receipt #: ".$cart->{id}." </h1>";
+  $page .= _cart_info({ ec_cart => $cart->{log}->{ec_cart} });
+  $page .= "<h2>Log Info</h2>
   <table>
     <tr><td>Cart status:</td><td>".$cart->{status}."</td></tr>
     <tr><td>Email</td><td>".$cart->{log}->{data}->{ec_cart}->{shipping}->{form}->{email}."</td>
