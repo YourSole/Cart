@@ -5,7 +5,6 @@ use warnings;
 use Test::More;
 use Plack::Test;
 use Dancer2;
-use Dancer2::Plugin::DBIC;
 use HTTP::Request::Common;
 use File::Temp qw(tempfile);
 use DBI;
@@ -61,7 +60,8 @@ my @sql = (
   'cart_id' INTEGER NOT NULL,
   'sku'  TEXT NOT NULL,
   'price' NUMERIC NOT NULL,
-  'quantity'  INTEGER NOT NULL
+  'quantity'  INTEGER NOT NULL,
+  'place'  INTEGER NOT NULL
 );",
 
 "INSERT INTO EC_PRODUCT values ('SU03','Product1','10.00','description of the product1')",
@@ -79,21 +79,24 @@ my $test = Plack::Test->create($app);
 my $jar = HTTP::Cookies->new;
 my $site = "http://localhost";
 
-my $req = POST $site . '/cart/add_product', [ 'sku' => "SU03", 'quantity' => '7' ];
+my $req = POST $site . '/cart/add_product', [ 'ec_sku' => "SU03", 'ec_quantity' => '7' ];
 my $res = $test->request( $req );
 $jar->extract_cookies( $res );
-$req = POST $site . '/cart/add_product', [ 'sku' => "SU04", 'quantity' => '1' ];
+$req = POST $site . '/cart/add_product', [ 'ec_sku' => "SU04", 'ec_quantity' => '1' ];
 $jar->add_cookie_header( $req );
 $test->request( $req );
 
 subtest 'Get subtotal' => sub {
-  my $req =  GET $site . '/cart/subtotal';
+  my $req =  GET $site . '/cart';
   $jar->add_cookie_header( $req );
   $res = $test->request( $req );
   like(
-      $res->content, qr/80/,'Get content for /cart/subtotal'
+      $res->content, qr/SU03/,'Get content for /cart and check SU03'
   );
 
+  like(
+      $res->content, qr/SU04/,'Get content for /cart and check SU04'
+  );
 };
 
 subtest 'Clearing cart' => sub {

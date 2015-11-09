@@ -45,6 +45,13 @@ __PACKAGE__->table("ec_cart_product");
 
 =cut
 
+=head2 place 
+
+  data_type: 'integer'
+  is_nullable: 0
+
+=cut
+
 __PACKAGE__->add_columns(
   "cart_id",
   { data_type => "integer", is_nullable => 0 },
@@ -53,6 +60,8 @@ __PACKAGE__->add_columns(
   "price",
   { data_type => "numeric", is_nullable => 0 },
   "quantity",
+  { data_type => "integer", is_nullable => 0 },
+  "place",
   { data_type => "integer", is_nullable => 0 },
 );
 

@@ -5,7 +5,6 @@ use warnings;
 use Test::More;
 use Plack::Test;
 use Dancer2;
-use Dancer2::Plugin::DBIC;
 use HTTP::Request::Common;
 use File::Temp qw(tempfile);
 use DBI;
@@ -45,7 +44,8 @@ my @sql = (
   'cart_id' INTEGER NOT NULL,
   'sku'  TEXT NOT NULL,
   'price' NUMERIC NOT NULL,
-  'quantity'  INTEGER NOT NULL
+  'quantity'  INTEGER NOT NULL,
+  'place' INTEGER NOT NULL
 );",
 );
 
@@ -63,12 +63,12 @@ subtest 'getting a cart by default' => sub {
     );
 };
 
-subtest 'getting a cart by cart_name' => sub {
-    my $res = $test->request( GET '/cart/new/foo' );
-    like(
-        $res->content,qr/foo/,'Get content for /cart/new/foo '
-    );
-};
+#subtest 'getting a cart by cart_name' => sub {
+#    my $res = $test->request( GET '/cart/new/foo' );
+#    like(
+#        $res->content,qr/foo/,'Get content for /cart/new/foo '
+#    );
+#};
 
 
 unlink $dbfile;

@@ -5,7 +5,6 @@ use warnings;
 use Test::More;
 use Plack::Test;
 use Dancer2;
-use Dancer2::Plugin::DBIC;
 use HTTP::Request::Common;
 use File::Temp qw(tempfile);
 use DBI;
@@ -61,7 +60,8 @@ my @sql = (
   'cart_id' INTEGER NOT NULL,
   'sku'  TEXT NOT NULL,
   'price' NUMERIC NOT NULL,
-  'quantity'  INTEGER NOT NULL
+  'quantity'  INTEGER NOT NULL,
+  'place' INTEGER NOT NULL
 );",
 
 "INSERT INTO EC_PRODUCT values ('SU03','Product1','10.00','description of the product1')",
@@ -83,17 +83,8 @@ my $req = GET $site . '/cart/new/';
 my $res = $test->request( $req );
 $jar->extract_cookies($res);
 
-subtest 'adding unexisting product' => sub {
-  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU00", 'quantity' => '1' ]; 
-  $jar->add_cookie_header( $req );
-  $res = $test->request( $req );
-  like(
-      $res->content, qr/Product doesn't exists/,'Get content for /cart/add_product/SU03'
-  );
-};
-
 subtest 'adding existing product' => sub {
-  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU03", 'quantity' => '1' ];
+  my $req = POST $site . '/cart/add_product', [ 'ec_sku' => "SU03", 'ec_quantity' => '1' ];
   $jar->add_cookie_header( $req );
   $res = $test->request( $req );
   like(
@@ -102,7 +93,7 @@ subtest 'adding existing product' => sub {
 };
 
 subtest 'adding existing product on cart' => sub {
-  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU03", 'quantity' => '7' ];
+  my $req = POST $site . '/cart/add_product', [ 'ec_sku' => "SU03", 'ec_quantity' => '7' ];
   $jar->add_cookie_header($req);
   $res = $test->request( $req );
   like(
@@ -112,7 +103,7 @@ subtest 'adding existing product on cart' => sub {
 
 subtest 'getting products' => sub {
 
-  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU04", 'quantity' => '1' ];
+  my $req = POST $site . '/cart/add_product', [ 'ec_sku' => "SU04", 'ec_quantity' => '1' ];
   $jar->add_cookie_header( $req );
   $test->request( $req );
 
@@ -130,7 +121,7 @@ subtest 'getting products' => sub {
 
 subtest 'removing porducts' => sub {
   
-  my $req = POST $site . '/cart/add_product', [ 'sku' => "SU03", 'quantity' => '-8' ];
+  my $req = POST $site . '/cart/add_product', [ 'ec_sku' => "SU03", 'ec_quantity' => '-8' ];
   $jar->add_cookie_header( $req );
   $test->request( $req );
   $req = GET $site . '/cart/products';
