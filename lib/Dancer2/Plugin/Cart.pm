@@ -112,6 +112,12 @@ BEGIN{
     default => sub { '1' }
   );
 
+  has 'excluded_routes' => (
+    is => 'ro',
+    from_config => 1,
+    default => sub {''}
+  );
+
   plugin_keywords qw/ 
     products
     cart
@@ -133,6 +139,8 @@ BEGIN{
     validate_cart_add_params
     before_cart_add
     after_cart_add
+    before_cart_add_item
+    after_cart_add_item
     validate_shipping_params
     before_shipping
     after_shipping
@@ -156,6 +164,8 @@ sub BUILD {
   my $self = shift;
   #Create a session 
   my $settings = $self->app->config;
+  my $excluded_routes = [ eval { $self->excluded_routes} ];
+
   if( $self->default_routes ){  
     $self->app->add_route(
       method => 'get',
@@ -175,7 +185,7 @@ sub BUILD {
           _products_view({ products => $self->products, product_pk => $self->product_pk });
         }
       },
-    );
+    )if !grep { $_ eq 'products' }@{$excluded_routes};
 
     $self->app->add_route(
       method => 'get',
@@ -200,7 +210,7 @@ sub BUILD {
         $app->session->write( 'ec_cart', $ec_cart );
         $page;
       }
-    );
+    )if !grep { $_ eq 'cart' }@{$excluded_routes};
 
     $self->app->add_route(
       method => 'post',
@@ -210,7 +220,8 @@ sub BUILD {
         $self->cart_add;
         $app->redirect('/cart');
       }
-    );
+    )if !grep { $_ eq 'cart/add' }@{$excluded_routes};
+
 
     $self->app->add_route(
       method => 'get',
@@ -220,7 +231,7 @@ sub BUILD {
         $self->clear_cart;
         $app->redirect('/cart');
       } 
-    );
+    )if !grep { $_ eq 'cart/clear' }@{$excluded_routes};
 
     $self->app->add_route(
       method => 'get',
@@ -243,7 +254,7 @@ sub BUILD {
         $app->session->write( 'ec_cart', $ec_cart );
         $page;
       }
-    ); 
+    )if !grep { $_ eq 'cart/shipping' }@{$excluded_routes}; 
   
     $self->app->add_route(
       method => 'post',
@@ -253,7 +264,7 @@ sub BUILD {
         $self->shipping;
         $app->redirect('/cart/billing');
       }
-    );
+    )if !grep { $_ eq 'cart/shipping' }@{$excluded_routes}; 
 
     $self->app->add_route(
       method => 'get',
@@ -276,7 +287,7 @@ sub BUILD {
         $app->session->write( 'ec_cart', $ec_cart );
         $page;
       }
-    );
+    )if !grep { $_ eq 'cart/billing' }@{$excluded_routes}; 
 
     $self->app->add_route(
       method => 'post',
@@ -286,7 +297,7 @@ sub BUILD {
         $self->billing; 
         $app->redirect('/cart/review');
       }
-    );
+    )if !grep { $_ eq 'cart/billing' }@{$excluded_routes}; 
     
     $self->app->add_route(
       method => 'get',
@@ -309,7 +320,7 @@ sub BUILD {
         $app->session->write('ec_cart',$ec_cart);
         $page;
       }
-    );
+    )if !grep { $_ eq 'cart/review' }@{$excluded_routes}; 
 
     $self->app->add_route(
       method => 'post',
@@ -319,7 +330,7 @@ sub BUILD {
         $self->checkout;
         $app->redirect('/cart/receipt');
       }
-    );
+    )if !grep { $_ eq 'cart/receipt' }@{$excluded_routes}; 
 
     $self->app->add_route(
       method => 'get',
@@ -344,7 +355,7 @@ sub BUILD {
         $app->session->delete('ec_cart');
         $page;
       }
-    );
+    )if !grep { $_ eq 'cart/receipt' }@{$excluded_routes}; 
   }
 };
 
@@ -547,14 +558,16 @@ sub clear_cart {
 
 
 sub cart_add {
-  my $self = shift;
+  my ($self, $params) = @_;
+  my ($name, $schema) = _parse_params($params);
+
   my $app = $self->app;
-  my $params = { $app->request->params };
+  my $form_params = { $app->request->params };
   my $product = undef;
   
   #Add params to ec_cart session
   my $ec_cart = $app->session->read( 'ec_cart' );
-  $ec_cart->{add}->{form} = $params; 
+  $ec_cart->{add}->{form} = $form_params; 
   $app->session->write( 'ec_cart', $ec_cart );
 
   #Param validation
@@ -574,20 +587,24 @@ sub cart_add {
     }
     else{
       my $ec_price = $self->product_price;
-      use Data::Dumper;
 
-      my $product_temp = $self->dbic->schema->resultset($self->product_name)->search({ $self->product_pk => $ec_cart->{add}->{form}->{ec_sku}  })->single;
-      if ( $product_temp ){
-        my $ec_price = $self->product_price;
-        $ec_cart->{add}->{form}->{ec_price} = $product_temp->$ec_price;
+
+      if($self->product_name && $self->product_pk && $self->product_price ) {
+        my $product_temp = $self->dbic->schema($schema)->resultset($self->product_name)->search({ $self->product_pk => $ec_cart->{add}->{form}->{ec_sku}  })->single;
+        if ( $product_temp ){
+          my $ec_price = $self->product_price;
+          $ec_cart->{add}->{form}->{ec_price} = $product_temp->$ec_price;
+        }
       }
        
+      $app->execute_hook( 'plugin.cart.before_cart_add_item' );
       $product = $self->cart_add_item({
           ec_sku => $ec_cart->{add}->{form}->{'ec_sku'},
           ec_quantity => $ec_cart->{add}->{form}->{'ec_quantity'},
           ec_price => $ec_cart->{add}->{form}->{'ec_price'} || 0
         }
       );
+      $app->execute_hook( 'plugin.cart.after_cart_add_item' );
 
       #Cart operations after adding product to the cart
       $app->execute_hook( 'plugin.cart.after_cart_add' );

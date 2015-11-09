@@ -160,7 +160,7 @@ sub create_cart_view{
 
   $page .=  "<h1>Cart</h1>";
   $page .= _cart_view({ editable => 1 });
-  $page .= "<p><a href='cart/shipping'> Checkout </a></p>
+  $page .= "$open_t IF ec_cart.cart.items.size > 0 $close_t <p><a href='cart/shipping'> Checkout </a></p>$open_t END $close_t
   <p> <a href='products'>Continue shopping</a></p>";
   create_view( 'cart/cart.tt', $page );
   return 1;
@@ -215,7 +215,10 @@ sub create_review_view{
 }
 
 sub create_receipt_view{
-  my $page ="";
+  my $page ="
+  <p>Checkout has been successful!!</p>
+  <h1>Receipt #: $open_t cart.id $close_t </h1>
+  ";
   $page .= _cart_view({ ec_cart => 'cart.log.ec_cart'});
   $page .= "
   <h2>Log Info</h2>
