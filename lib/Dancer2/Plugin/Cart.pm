@@ -711,7 +711,23 @@ sub adjustments {
   my ($self, $params) = @_;
   my ($name, $schema) = _parse_params($params);
   my $app = $self->app;
-
+  my $ec_cart = $app->session->read('ec_cart');
+  my $default_adjustments = [
+    {
+      description => 'Discounts',
+      value => '0'
+    },
+    {
+      description => 'Shipping',
+      value => '0'
+    },
+    {
+      description => 'Taxes',
+      value => '0'
+    },
+  ];
+  $ec_cart->{cart}->{adjustments} = $default_adjustments;
+  $app->session->write( 'ec_cart', $ec_cart );
   $app->execute_hook('plugin.cart.adjustments');
 }
 

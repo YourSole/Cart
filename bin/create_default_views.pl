@@ -126,15 +126,9 @@ sub _cart_view {
         <tr>
           <td colspan=$colspan align='right'>Subtotal</td><td>$open_t $ec_cart.cart.subtotal $close_t</td>
         </tr>
-    $open_t IF $ec_cart.cart.adjustments.size $close_t 
       $open_t FOREACH adjustment IN $ec_cart.cart.adjustments $close_t
         <tr><td colspan=$colspan align='right'>$open_t adjustment.description $close_t</td><td>$open_t adjustment.value $close_t</td></tr> 
       $open_t END $close_t 
-    $open_t ELSE $close_t    
-      <tr><td colspan=$colspan align='right'>Discounts</td><td>0</td></tr> 
-      <tr><td colspan=$colspan align='right'>Shipping</td><td>0</td></tr> 
-      <tr><td colspan=$colspan align='right'>Taxes</td><td>0</td></tr> 
-    $open_t END $close_t 
       </tbody>
       <tfoot>
         <tr>

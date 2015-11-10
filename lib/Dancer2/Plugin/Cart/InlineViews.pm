@@ -100,15 +100,8 @@ sub _cart_info{
     $page .= '<table>
       <tbody>';
     
-    if ( @{$ec_cart->{cart}->{adjustments}} > 0  ){ 
-      foreach my $adjustment (@{$ec_cart->{cart}->{adjustments}}){
-        $page .= "<tr><td colspan=4>".$adjustment->{description}."</td><td>".$adjustment->{value}."</td></tr>"; 
-      }
-    }
-    else{
-      $page .= "<tr><td colspan=4>Discounts</td><td>0</td></tr>"; 
-      $page .= "<tr><td colspan=4>Shipping</td><td>0</td></tr>"; 
-      $page .= "<tr><td colspan=4>Taxes</td><td>0</td></tr>"; 
+    foreach my $adjustment (@{$ec_cart->{cart}->{adjustments}}){
+      $page .= "<tr><td colspan=4>".$adjustment->{description}."</td><td>".$adjustment->{value}."</td></tr>"; 
     }
 
     $page .= "

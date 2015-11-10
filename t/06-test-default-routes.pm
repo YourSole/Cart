@@ -212,6 +212,16 @@ subtest 'Review info' => sub {
   is(
     $res->{_rc}, '200','Get content /cart/review'
   );
+  
+  like(
+    $res->content, qr/Discounts/, 'Discounts adjustments are on the review info'
+  );
+  like(
+    $res->content, qr/Shipping/, 'Shipping adjustments are on the review info'
+  );
+  like(
+    $res->content, qr/Taxes/, 'Taxes adjustments are on the review info'
+  );
 };
 
 subtest 'Place Order' => sub {
