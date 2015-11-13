@@ -31,19 +31,19 @@ BEGIN{
   has 'product_name' => (
     is => 'ro',
     from_config => 'product_name',
-    default => sub { 'EcProduct' }
+    default => sub { undef }
   );
 
   has 'product_pk' => (
     is => 'ro',
     from_config => 'product_pk',
-    default => sub { 'sku' }
+    default => sub { undef }
   );
 
   has 'product_price' => (
     is => 'ro',
     from_config => 'product_price',
-    default => sub { 'price' }
+    default => sub { undef }
   );
 
   has 'product_filter' => (
@@ -115,7 +115,7 @@ BEGIN{
   has 'excluded_routes' => (
     is => 'ro',
     from_config => 1,
-    default => sub {''}
+    default => sub { [] }
   );
 
   plugin_keywords qw/ 
@@ -164,7 +164,7 @@ sub BUILD {
   my $self = shift;
   #Create a session 
   my $settings = $self->app->config;
-  my $excluded_routes = [ eval { $self->excluded_routes} ];
+  my $excluded_routes = $self->excluded_routes;
 
   if( $self->default_routes ){  
     $self->app->add_route(
@@ -472,7 +472,11 @@ sub cart_items {
   );
 
   while( my $ci = $cart_items->next ){
-    my $product =  $self->dbic->schema($schema)->resultset($self->product_name)->search({ $self->product_pk => $ci->sku })->single;
+    my $product =  undef;
+
+    if($self->product_name && $self->product_pk ){
+      $product = $self->dbic->schema($schema)->resultset($self->product_name)->search({ $self->product_pk => $ci->sku })->single;
+    }
 
     my $item_subtotal = $self->item_subtotal( { ec_sku => $ci->sku, ec_quantity => $ci->quantity, ec_price => $ci->price } ) || 0;
     
