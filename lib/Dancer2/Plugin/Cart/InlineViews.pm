@@ -43,6 +43,7 @@ sub _cart_view{
   $page .=  "<h1>Cart</h1>\n";
   $page .= _cart_info({ ec_cart => $ec_cart, editable => 1 });
   $page .= "<a href='products'> Continue shopping. </a>\n";
+  $page .= "\n<p><a href='cart/shipping'> Checkout. </a></p>";
   $page;
 }
 
@@ -113,8 +114,7 @@ sub _cart_info{
       </tfoot>
     </table>";
 
-    $page .= "\n<p><a href='cart/clear'> Clear your cart. </a></p>";
-    $page .= "\n<p><a href='cart/shipping'> Checkout. </a></p>";
+    $page .= "\n<p><a href='clear'> Clear your cart. </a></p>";
   }
   else{
     $page .= "Your cart is empty.";
