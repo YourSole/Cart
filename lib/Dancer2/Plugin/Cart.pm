@@ -37,13 +37,13 @@ BEGIN{
   has 'product_pk' => (
     is => 'ro',
     from_config => 'product_pk',
-    default => sub { undef }
+    default => sub { 'sku' }
   );
 
   has 'product_price' => (
     is => 'ro',
     from_config => 'product_price',
-    default => sub { undef }
+    default => sub { 'price' }
   );
 
   has 'product_filter' => (
@@ -129,7 +129,7 @@ BEGIN{
     billing
     shipping
     checkout
-    place_order
+    close_cart
     adjustments
   /;
 
@@ -149,7 +149,10 @@ BEGIN{
     after_billing
     validate_checkout_params
     before_checkout
+    checkout
     after_checkout
+    before_close_cart
+    after_close_cart
     before_clear_cart
     after_clear_cart
     before_item_subtotal
@@ -680,15 +683,13 @@ sub checkout{
     $app->redirect( $app->request->referer || $app->request->uri  );
   }
   else{
-    $app->execute_hook( 'plugin.cart.before_checkout' ); 
-    my $cart_id = $self->place_order;
-    $app->session->delete( 'ec_cart' );
-    $app->session->write('ec_cart',{ cart => { id => $cart_id } } );
+    $app->execute_hook( 'plugin.cart.checkout' ); 
+#    my $cart_id = $self->close_cart;
     $app->execute_hook( 'plugin.cart.after_checkout' );
   }
 }
 
-sub place_order{
+sub close_cart{
   my ($self, $params) = @_;
   my ($name, $schema) = _parse_params($params);
   my $app = $self->app;
@@ -700,6 +701,7 @@ sub place_order{
   return { error => 'Cart not found' } unless $cart_temp;
   require Dancer2::Serializer::JSON;
 
+  $app->execute_hook( 'plugin.cart.before_close_cart' ); 
   $cart_temp->update({
     status => 1,
     log => Dancer2::Serializer::JSON::to_json( {
@@ -708,7 +710,14 @@ sub place_order{
       ec_cart => $app->session->read('ec_cart'),
     })
   });
-  $cart_temp->id;
+
+  $app->session->delete( 'ec_cart' );
+  $app->session->write('ec_cart',{ cart => { id => $cart_temp->id } } );
+
+  $app->execute_hook( 'plugin.cart.after_close_cart' ); 
+
+  my $ec_cart = $app->session->read('ec_cart');
+  $ec_cart->{cart}->{id};
 }
 
 sub adjustments {

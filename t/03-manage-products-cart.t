@@ -111,11 +111,11 @@ subtest 'getting products' => sub {
   $jar->add_cookie_header( $req );
   $res = $test->request( $req );
   like(
-    $res->content,qr/Product1/, 'Get an array of products with their info - check Product 1' 
+    $res->content,qr/SU03/, 'Get an array of products with their info - check Product 1' 
   );
 
   like(
-    $res->content,qr/Product2/, 'Get an array of products with their info - check Product 2' 
+    $res->content,qr/SU04/, 'Get an array of products with their info - check Product 2' 
   );
 };
 
@@ -128,10 +128,10 @@ subtest 'removing porducts' => sub {
   $jar->add_cookie_header( $req );
   $res = $test->request( $req );
   unlike(
-    $res->content,qr/Product1/, 'Get an array of products with their info - product 1 disappear' 
+    $res->content,qr/SU03/, 'Get an array of products with their info - product 1 disappear' 
   );
   like(
-    $res->content,qr/Product2/, 'Get an array of products with their info - product 2' 
+    $res->content,qr/SU04/, 'Get an array of products with their info - product 2' 
   );
 
 };

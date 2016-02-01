@@ -24,6 +24,9 @@ if ($@) {
 my (undef, $dbfile) = tempfile(SUFFIX => '.db');
 
 t::lib::TestApp1::set plugins => {
+    'Cart' => {
+      default_routes => 1,
+    },
     DBIC => {
         foo => {
             dsn =>  "dbi:SQLite:dbname=$dbfile",

@@ -63,14 +63,6 @@ subtest 'getting a cart by default' => sub {
     );
 };
 
-#subtest 'getting a cart by cart_name' => sub {
-#    my $res = $test->request( GET '/cart/new/foo' );
-#    like(
-#        $res->content,qr/foo/,'Get content for /cart/new/foo '
-#    );
-#};
-
-
 unlink $dbfile;
 
 done_testing;
