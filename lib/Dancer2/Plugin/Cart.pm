@@ -37,13 +37,13 @@ BEGIN{
   has 'product_pk' => (
     is => 'ro',
     from_config => 'product_pk',
-    default => sub { 'sku' }
+    default => sub { undef }
   );
 
   has 'product_price' => (
     is => 'ro',
     from_config => 'product_price',
-    default => sub { 'price' }
+    default => sub { undef }
   );
 
   has 'product_filter' => (
@@ -684,7 +684,7 @@ sub checkout{
   }
   else{
     $app->execute_hook( 'plugin.cart.checkout' ); 
-#    my $cart_id = $self->close_cart;
+    $self->close_cart;
     $app->execute_hook( 'plugin.cart.after_checkout' );
   }
 }
