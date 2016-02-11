@@ -21,31 +21,30 @@ The plugin become with a script file in order to generate basic views of each st
 # SYNOPSIS
 
 1.  Crate a table as:
+    CREATE TABLE ec_cart (
+      id serial,
+      name  TEXT NOT NULL,
+      session TEXT NOT NULL,
+      status INTEGER NOT NULL default 0,
+      log TEXT,
+      PRIMARY KEY(id)
+    );
 
-CREATE TABLE ec_cart (
-  id serial,
-  name  TEXT NOT NULL,
-  session TEXT NOT NULL,
-  status INTEGER NOT NULL default 0,
-  log TEXT,
-  PRIMARY KEY(id)
-);
-
-CREATE TABLE ec_cart_product (
-  cart_id INTEGER NOT NULL,
-  sku  TEXT NOT NULL,
-  price NUMERIC NOT NULL,
-  quantity  INTEGER NOT NULL,
-  place INTEGER NOT NULL,
-  PRIMARY KEY(cart_id, sku)
-);
+    CREATE TABLE ec_cart_product (
+      cart_id INTEGER NOT NULL,
+      sku  TEXT NOT NULL,
+      price NUMERIC NOT NULL,
+      quantity  INTEGER NOT NULL,
+      place INTEGER NOT NULL,
+      PRIMARY KEY(cart_id, sku)
+    );
 
 
 2. Generate the DBIC clases:
 
-A good way to do it is with dbicdump as an example:
+    A good way to do it is with dbicdump as an example:
 
-dbicdump -o overwrite_modifications=1 -o db_schema=public App::Schema -o constraint='qr/ec_cart/' "dbi:Pg:dbname=$dbname;host=$host;port=$port; options=$options; tty=$tty", "$username", "$password"
+    dbicdump -o overwrite_modifications=1 -o db_schema=public App::Schema -o constraint='qr/ec_cart/' "dbi:Pg:dbname=$dbname;host=$host;port=$port; options=$options; tty=$tty", "$username", "$password"
 
 
 3. Configure the plugin in order to set up the tables and main fields.  The mandatory fields are in teh example, and the configuration options are listed below.
@@ -58,78 +57,78 @@ plugins:
 
 4. use the library
 
-On your app.pm add:
+    On your app.pm add:
 
-use Dancer2::Plugin2::Cart;
+    use Dancer2::Plugin2::Cart;
 
 
 
 ##Configuration Options: 
 
-cart_name:  
-cart_product_name
-product_name
-product_pk
-product_price
-product_filter
-product_order
-products_view_template
-cart_vidw_template
-cart_receipt_template
-cart_checkout_template
-shipping_view_template
-billing_view_template
-review_view_template
-receipt_view_template
-default_routes
-excluded_routes 
+* cart_name:  
+* cart_product_name
+* product_name
+* product_pk
+* product_price
+* product_filter
+* product_order
+* products_view_template
+* cart_vidw_template
+* cart_receipt_template
+* cart_checkout_template
+* shipping_view_template
+* billing_view_template
+* review_view_template
+* receipt_view_template
+* default_routes
+* excluded_routes 
 
 
 ##Keywords:
 
-products
-cart
-cart_add
-cart_add_item
-cart_items
-clear_cart
-subtotal
-billing
-shipping
-checkout
-close_cart
-adjustments
+* products
+* cart
+* cart_add
+* cart_add_item
+* cart_items
+* clear_cart
+* subtotal
+* billing
+* shipping
+* checkout
+* close_cart
+* adjustments
 
 
 
 ##Hooks:
 
-before_cart
-after_cart
-validate_cart_add_params
-before_cart_add
-after_cart_add
-before_cart_add_item
-after_cart_add_item
-validate_shipping_params
-before_shipping
-after_shipping
-validate_billing_params
-before_billing
-after_billing
-validate_checkout_params
-before_checkout
-checkout
-after_checkout
-before_close_cart
-after_close_cart
-before_clear_cart
-after_clear_cart
-before_item_subtotal
-after_item_subtotal
-before_subtotal
-after_subtotal
-adjustments
+* before_cart
+* after_cart
+* validate_cart_add_params
+* before_cart_add
+* after_cart_add
+* before_cart_add_item
+* after_cart_add_item
+* validate_shipping_params
+* before_shipping
+* after_shipping
+* validate_billing_params
+* before_billing
+* after_billing
+* validate_checkout_params
+* before_checkout
+* checkout
+* after_checkout
+* before_close_cart
+* after_close_cart
+* before_clear_cart
+* after_clear_cart
+* before_item_subtotal
+* after_item_subtotal
+* before_subtotal
+* after_subtotal
+* adjustments
 
 
 
