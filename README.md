@@ -49,11 +49,11 @@ The plugin become with a script file in order to generate basic views of each st
 
 3. Configure the plugin in order to set up the tables and main fields.  The mandatory fields are in teh example, and the configuration options are listed below.
 
-plugins:
-  Cart:
-    product_name: 'Product'
-    product_pk: 'sku'
-    product_price: 'price'
+    plugins:
+      Cart:
+        product_name: 'Product'
+        product_pk: 'sku'
+        product_price: 'price'
 
 4. use the library
 
@@ -65,70 +65,70 @@ plugins:
 
 ##Configuration Options: 
 
-* cart_name:  
-* cart_product_name
-* product_name
-* product_pk
-* product_price
-* product_filter
-* product_order
-* products_view_template
-* cart_vidw_template
-* cart_receipt_template
-* cart_checkout_template
-* shipping_view_template
-* billing_view_template
-* review_view_template
-* receipt_view_template
-* default_routes
-* excluded_routes 
+    * cart_name:  
+    * cart_product_name
+    * product_name
+    * product_pk
+    * product_price
+    * product_filter
+    * product_order
+    * products_view_template
+    * cart_vidw_template
+    * cart_receipt_template
+    * cart_checkout_template
+    * shipping_view_template
+    * billing_view_template
+    * review_view_template
+    * receipt_view_template
+    * default_routes
+    * excluded_routes 
 
 
 ##Keywords:
 
-* products
-* cart
-* cart_add
-* cart_add_item
-* cart_items
-* clear_cart
-* subtotal
-* billing
-* shipping
-* checkout
-* close_cart
-* adjustments
+    * products
+    * cart
+    * cart_add
+    * cart_add_item
+    * cart_items
+    * clear_cart
+    * subtotal
+    * billing
+    * shipping
+    * checkout
+    * close_cart
+    * adjustments
 
 
 
 ##Hooks:
 
-* before_cart
-* after_cart
-* validate_cart_add_params
-* before_cart_add
-* after_cart_add
-* before_cart_add_item
-* after_cart_add_item
-* validate_shipping_params
-* before_shipping
-* after_shipping
-* validate_billing_params
-* before_billing
-* after_billing
-* validate_checkout_params
-* before_checkout
-* checkout
-* after_checkout
-* before_close_cart
-* after_close_cart
-* before_clear_cart
-* after_clear_cart
-* before_item_subtotal
-* after_item_subtotal
-* before_subtotal
-* after_subtotal
-* adjustments
+    * before_cart
+    * after_cart
+    * validate_cart_add_params
+    * before_cart_add
+    * after_cart_add
+    * before_cart_add_item
+    * after_cart_add_item
+    * validate_shipping_params
+    * before_shipping
+    * after_shipping
+    * validate_billing_params
+    * before_billing
+    * after_billing
+    * validate_checkout_params
+    * before_checkout
+    * checkout
+    * after_checkout
+    * before_close_cart
+    * after_close_cart
+    * before_clear_cart
+    * after_clear_cart
+    * before_item_subtotal
+    * after_item_subtotal
+    * before_subtotal
+    * after_subtotal
+    * adjustments
 
 
 
