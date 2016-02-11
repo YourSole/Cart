@@ -12,9 +12,9 @@ This plugin provides a easy way to manage a shopping cart in dancer2.  All the i
 
 It was designed to be used on new or existing database, providing a lot of hooks in order to fit customizable solutions.
 
-The plugin is going to search default templates on the views directory, if the view doesn't exists, the plugin will render and inline template provided by the plugin.
+By default, the plugin is going to search default templates on the views directory, if the view doesn't exists, the plugin will render and inline template provided by the plugin.
 
-The plugin become with a script file in order to generate basic views of each stage of a checkout, and you will be able to adapt it as your need.
+An script file has been added in order to generate the template views of each stage of a checkout, and the user will be able to adapt it to their needs.
 
 
 
