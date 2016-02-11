@@ -21,23 +21,24 @@ The plugin become with a script file in order to generate basic views of each st
 # SYNOPSIS
 
 1.  Crate a table as:
-    CREATE TABLE ec_cart (
-      id serial,
-      name  TEXT NOT NULL,
-      session TEXT NOT NULL,
-      status INTEGER NOT NULL default 0,
-      log TEXT,
-      PRIMARY KEY(id)
-    );
 
-    CREATE TABLE ec_cart_product (
-      cart_id INTEGER NOT NULL,
-      sku  TEXT NOT NULL,
-      price NUMERIC NOT NULL,
-      quantity  INTEGER NOT NULL,
-      place INTEGER NOT NULL,
-      PRIMARY KEY(cart_id, sku)
-    );
+         CREATE TABLE ec_cart (
+                 id serial,
+                 name  TEXT NOT NULL,
+                 session TEXT NOT NULL,
+                 status INTEGER NOT NULL default 0,
+                 log TEXT,
+                 PRIMARY KEY(id)
+        );
+
+         CREATE TABLE ec_cart_product (
+                 cart_id INTEGER NOT NULL,
+                 sku  TEXT NOT NULL,
+                 price NUMERIC NOT NULL,
+                 quantity  INTEGER NOT NULL,
+                 place INTEGER NOT NULL,
+                 PRIMARY KEY(cart_id, sku)
+        );
 
 
 2. Generate the DBIC clases:
@@ -49,12 +50,12 @@ The plugin become with a script file in order to generate basic views of each st
 
 3. Configure the plugin in order to set up the tables and main fields.  The mandatory fields are in teh example, and the configuration options are listed below.
 
-    plugins:
-      Cart:
-        product_name: 'Product'
-        product_pk: 'sku'
-        product_price: 'price'
-
+        plugins:
+              Cart:
+                    product_name: 'Product'
+                    product_pk: 'sku'
+                    product_price: 'price'
+    
 4. use the library
 
     On your app.pm add:
