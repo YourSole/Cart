@@ -20,7 +20,7 @@ The plugin become with a script file in order to generate basic views of each st
 
 # SYNOPSIS
 
-1.  Crate a table as:
+1.  Create a table as:
 
          CREATE TABLE ec_cart (
                  id serial,
