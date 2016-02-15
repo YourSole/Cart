@@ -5,6 +5,8 @@ BEGIN{
   set plugins => {
       'Cart' => {
         product_name => 'EcProduct',
+        product_pk => 'sku',
+        product_price => 'price',
         product_filter => "{ sku => { 'like', '%SU0%'} }",
         product_order => "{ -asc => 'sku' }",
       },

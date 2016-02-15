@@ -25,7 +25,9 @@ my (undef, $dbfile) = tempfile(SUFFIX => '.db');
 
 t::lib::TestApp1::set plugins => {
     'Cart' => {
-      default_routes => 1,
+      product_name => 'EcProduct',
+      product_pk => 'sku',
+      product_price => 'price',
     },
     DBIC => {
         foo => {

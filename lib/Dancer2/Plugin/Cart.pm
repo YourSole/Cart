@@ -593,10 +593,8 @@ sub cart_add {
       $self->app->redirect( $app->request->referer || $app->request->uri  );
     }
     else{
-      my $ec_price = $self->product_price;
-
-
       if($self->product_name && $self->product_pk && $self->product_price ) {
+        my $ec_price = $self->product_price;
         my $product_temp = $self->dbic->schema($schema)->resultset($self->product_name)->search({ $self->product_pk => $ec_cart->{add}->{form}->{ec_sku}  })->single;
         if ( $product_temp ){
           my $ec_price = $self->product_price;
