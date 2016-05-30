@@ -682,6 +682,10 @@ sub checkout{
   }
   else{
     $app->execute_hook( 'plugin.cart.checkout' ); 
+    $ec_cart = $app->session->read('ec_cart');
+    if ( $ec_cart->{checkout}->{error} ){
+      $app->redirect( $app->request->referer || $app->request->uri  );
+    }
     $self->close_cart;
     $app->execute_hook( 'plugin.cart.after_checkout' );
   }
