@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Dancer2::Plugin2;
 use Dancer2::Plugin::Cart::InlineViews;
+use JSON;
 our $VERSION = '0.0001';  #Version
 
 BEGIN{
@@ -342,18 +343,15 @@ sub BUILD {
         my $app = shift;
         my $template = $self->receipt_view_template || '/cart/receipt.tt' ;
         my $ec_cart = $app->session->read('ec_cart');
-
-        $app->redirect('/') unless $ec_cart->{cart}->{id};
-
-        my $cart = $self->cart( { status => 1, cart_id => $ec_cart->{cart}->{id} });
-        require Dancer2::Serializer::JSON;
-        $cart->{log} =  Dancer2::Serializer::JSON::from_json( $cart->{log} );
+        $app->redirect('/') unless $ec_cart->{id};
+        $ec_cart = $self->cart( { status => 1, cart_id => $ec_cart->{id} });
+        $app->session->write( 'ec_cart', $ec_cart );
         my $page = "";
         if( -e $app->config->{views}.$template ) {
-            $page = $app->template($template, { cart => $cart } );
+            $page = $app->template($template, { cart => $ec_cart } );
         }
         else{
-          $page = _receipt_view({ cart => $cart });
+          $page = _receipt_view({ cart => $ec_cart });
         }
         $app->session->delete('ec_cart');
         $page;
@@ -436,6 +434,7 @@ sub cart {
   }
   else{
     $cart = $self->schema($schema)->resultset($self->cart_name)->search($cart_info)->first;
+    return from_json( $cart->log )->{ec_cart};
   }
   $params->{cart_id} = $cart->id if $cart;
 
@@ -701,12 +700,11 @@ sub close_cart{
 
   my $cart_temp = $self->dbic->schema($schema)->resultset($self->cart_name)->find($cart->{id});
   return { error => 'Cart not found' } unless $cart_temp;
-  require Dancer2::Serializer::JSON;
 
   $app->execute_hook( 'plugin.cart.before_close_cart' ); 
   $cart_temp->update({
     status => 1,
-    log => Dancer2::Serializer::JSON::to_json( {
+    log => to_json( {
       session => $app->session->{id},
       data => $app->session->{data},
       ec_cart => $app->session->read('ec_cart'),
@@ -714,10 +712,8 @@ sub close_cart{
   });
 
   $app->session->delete( 'ec_cart' );
-  $app->session->write('ec_cart',{ cart => { id => $cart_temp->id } } );
-
+  $app->session->write('ec_cart',{ id => $cart_temp->id } );
   $app->execute_hook( 'plugin.cart.after_close_cart' ); 
-
   my $ec_cart = $app->session->read('ec_cart');
   $ec_cart->{cart}->{id};
 }
