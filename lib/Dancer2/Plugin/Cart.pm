@@ -1,7 +1,7 @@
 package Dancer2::Plugin::Cart;
 use strict;
 use warnings;
-use Dancer2::Plugin2;
+use Dancer2::Plugin;
 use Dancer2::Plugin::Cart::InlineViews;
 use JSON;
 our $VERSION = '0.0001';  #Version
