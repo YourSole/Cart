@@ -211,14 +211,14 @@ sub create_review_view{
 sub create_receipt_view{
   my $page ="
   <p>Checkout has been successful!!</p>
-  <h1>Receipt #: $open_t cart.id $close_t </h1>
+  <h1>Receipt #: $open_t cart.cart.id $close_t </h1>
   ";
-  $page .= _cart_view({ ec_cart => 'cart.log.ec_cart'});
+  $page .= _cart_view({ ec_cart => 'cart'});
   $page .= "
   <h2>Log Info</h2>
   <table>
-    <tr><td>Cart status:</td><td>$open_t  cart.status $close_t</td></tr>
-    <tr><td>Email</td><td> $open_t cart.log.data.ec_cart.shipping.form.email $close_t </td>
+    <tr><td>Session:</td><td>$open_t  cart.cart.session $close_t</td></tr>
+    <tr><td>Email</td><td> $open_t cart.shipping.form.email $close_t </td>
   </table>
   <p><a href='../products'> Product index </a></p>";
   create_view( 'cart/receipt.tt', $page );

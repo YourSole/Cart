@@ -246,6 +246,9 @@ subtest 'Receipt' => sub {
   is(
     $res->{_rc}, '200','Get content /cart/receipt'
   );
+  like(
+    $res->content, qr/Receipt #: 1/, 'Taxes adjustments are on the review info'
+  );
 
 };
 

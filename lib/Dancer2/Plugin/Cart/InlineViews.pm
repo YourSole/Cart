@@ -196,12 +196,12 @@ sub _receipt_view{
 
   $page .= "
   <p>Checkout has been successful!!</p>
-  <h1>Receipt #: ".$cart->{id}." </h1>";
-  $page .= _cart_info({ ec_cart => $cart->{log}->{ec_cart} });
+  <h1>Receipt #: ".$cart->{cart}->{id}." </h1>";
+  $page .= _cart_info({ ec_cart => $cart });
   $page .= "<h2>Log Info</h2>
   <table>
-    <tr><td>Cart status:</td><td>".$cart->{status}."</td></tr>
-    <tr><td>Email</td><td>".$cart->{log}->{data}->{ec_cart}->{shipping}->{form}->{email}."</td>
+    <tr><td>Session :</td><td>".$cart->{cart}->{session}."</td></tr>
+    <tr><td>Email</td><td>".$cart->{shipping}->{form}->{email}."</td>
   </table>
   <p> <a href='../products'>Go to products</a> </p>";
   $page;  
