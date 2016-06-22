@@ -10,9 +10,6 @@ use lib File::Spec->catdir( 't', 'lib' );
 
 use TestApp;
 
-t::lib::TestApp::set plugins => {
-};
-
 my $app = Dancer2->runner->psgi_app;
 is( ref $app, 'CODE', 'Got app' );
 

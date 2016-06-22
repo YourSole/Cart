@@ -1,6 +1,6 @@
 sub _products_view{
   my ($params) = @_;
-  my $products = $params->{products};
+  my $products = $params->{product_list};
   my $page ="";
   $page .= "
   <h1>Product list</h1>
@@ -53,7 +53,7 @@ sub _cart_info{
   my $editable = $params->{editable};
 
   my $page = "";
-  if (@{$ec_cart->{cart}->{items}} > 0 ) {
+  if (@{$ec_cart->{items}} > 0 ) {
     $page .= "
     <table>
       <thead>
@@ -62,7 +62,7 @@ sub _cart_info{
         </tr>
       </thead>
       <tbody>";
-    foreach my $item (@{$ec_cart->{cart}->{items}}){
+    foreach my $item (@{$ec_cart->{items}}){
       $page .= "
         <tr>
           <td>".$item->{ec_sku}."</td>
@@ -191,17 +191,17 @@ sub _review_view{
 
 sub _receipt_view{
   my ($params) = @_;
-  my $cart = $params->{cart};
+  my $ec_cart = $params->{ec_cart};
   my $page = "";
 
   $page .= "
   <p>Checkout has been successful!!</p>
-  <h1>Receipt #: ".$cart->{cart}->{id}." </h1>";
+  <h1>Receipt #: ".$cart->{cart}->{session}." </h1>";
   $page .= _cart_info({ ec_cart => $cart });
   $page .= "<h2>Log Info</h2>
   <table>
-    <tr><td>Session :</td><td>".$cart->{cart}->{session}."</td></tr>
-    <tr><td>Email</td><td>".$cart->{shipping}->{form}->{email}."</td>
+    <tr><td>Session :</td><td>".$ec_cart->{cart}->{session}."</td></tr>
+    <tr><td>Email</td><td>".$ec_cart->{shipping}->{form}->{email}."</td>
   </table>
   <p> <a href='../products'>Go to products</a> </p>";
   $page;  

@@ -8,55 +8,10 @@ our $VERSION = '0.0001';  #Version
 
 BEGIN{
 
-  has 'dbic' => (
-      is => 'ro',
-      lazy => 1,
-      default => sub {
-          scalar $_[0]->app->with_plugin( 'DBIC' )
-      },
-      handles => { 'schema' => 'schema', 'resultset' => 'resultset' },
-  );
-
-  has 'cart_name' => (
+  has 'product_list' => (
     is => 'ro',
-    from_config => 'cart_name',
-    default => sub { 'EcCart' }
-  );
-
-  has 'cart_product_name' => (
-    is => 'ro',
-    from_config => 'cart_product_name',
-    default => sub { 'EcCartProduct' }
-  );
-
-  has 'product_name' => (
-    is => 'ro',
-    from_config => 'product_name',
-    default => sub { undef }
-  );
-
-  has 'product_pk' => (
-    is => 'ro',
-    from_config => 'product_pk',
-    default => sub { undef }
-  );
-
-  has 'product_price' => (
-    is => 'ro',
-    from_config => 'product_price',
-    default => sub { undef }
-  );
-
-  has 'product_filter' => (
-    is => 'ro',
-    from_config => 'product_filter',
-    default => sub { undef } 
-  );
-
-  has 'product_order' => (
-    is => 'ro',
-    from_config => 'product_order',
-    default => sub { undef }
+    from_config => 1,
+    default => sub { [] }
   );
 
   has 'products_view_template' => (
@@ -124,7 +79,6 @@ BEGIN{
     cart
     cart_add
     cart_add_item
-    cart_items
     clear_cart
     subtotal
     billing
@@ -135,6 +89,7 @@ BEGIN{
   /;
 
   plugin_hooks qw/
+		products
     before_cart
     after_cart
     validate_cart_add_params
@@ -180,13 +135,12 @@ sub BUILD {
         $app->session;
         my $template = $self->products_view_template || '/products.tt' ;
         if( -e $self->app->config->{views}.$template ) {
-          my @products = $self->products;
           $app->template( $template, {
-            products => $self->products
+            product_list => $self->product_list
           } );
         }
         else{
-          _products_view({ products => $self->products, product_pk => $self->product_pk });
+          _products_view({ product_list => $self->product_list });
         }
       },
     )if !grep { $_ eq 'products' }@{$excluded_routes};
@@ -342,16 +296,13 @@ sub BUILD {
       code => sub {
         my $app = shift;
         my $template = $self->receipt_view_template || '/cart/receipt.tt' ;
-        my $ec_cart = $app->session->read('ec_cart');
-        $app->redirect('/') unless $ec_cart->{id};
-        $ec_cart = $self->cart( { status => 1, cart_id => $ec_cart->{id} });
-        $app->session->write( 'ec_cart', $ec_cart );
         my $page = "";
+				my $ec_cart = $app->session->read('ec_cart');
         if( -e $app->config->{views}.$template ) {
             $page = $app->template($template, { cart => $ec_cart } );
         }
         else{
-          $page = _receipt_view({ cart => $ec_cart });
+          $page = _receipt_view({ ec_cart => $ec_cart });
         }
         $app->session->delete('ec_cart');
         $page;
@@ -363,138 +314,60 @@ sub BUILD {
 
 sub products {
   my ($self, $params) = @_;
-  my ($name, $schema) = _parse_params($params);
+  my $app = $self->app;
 
-  my $product_filter_eval = $self->product_filter ? eval $self->product_filter : {};
-  my $product_order_eval  = $self->product_order ? { order_by => { eval $self->product_order } } : {};
+	if ( scalar @{$self->product_list} > 0 ){
+		return $self->product_list;
+	}
 
-  my $arr = [];
-  my $products = $self->dbic->schema($schema)->resultset($self->product_name)->search( $product_filter_eval, $product_order_eval );
-
-  while( my $product = $products->next ){
-    my $ec_sku = $self->product_pk;
-    my $ec_price = $self->product_price;
-    push @{$arr}, { $product->get_columns, ec_sku => $product->$ec_sku, ec_price => $product->$ec_price || 0 };
-  }
-  $arr;
+	my @products = [];
+  $app->execute_hook('plugin.cart.products');
+	my $ec_cart = cart;
+	if ( $ec_cart->{products} ){
+		return $ec_cart->{products};
+	}
+	return @products;
 }
 sub cart_add_item {
-  my ( $self, $product, $params ) = @_;
-  my ( $name, $schema ) = _parse_params($params);
-
-  #check if the product exists other whise create a new one
-  my $cart_product = $self->dbic->schema($schema)->resultset($self->cart_product_name)->find({
-    cart_id =>  $self->cart( $params )->{id},
-    sku => $product->{ ec_sku },
-  });
-  if( $cart_product ){
-   if ( $cart_product->quantity + $product->{ec_quantity} > 0 ){
-      $cart_product->update({
-        quantity => $cart_product->quantity + $product->{ec_quantity}
-      });
+  my ( $self, $product ) = @_;
+  my $app = $self->app;
+	my $index = 0;
+	my $ec_cart = $self->cart; 
+	$ec_cart->{items} = [] unless $ec_cart->{items};
+	foreach my $cart_product ( @{$ec_cart->{items}} ){
+    if( $cart_product->{ec_sku} eq $product->{ec_sku} ){
+			foreach my $product ( @{$self->product_list} ){
+				if ($product->{ec_sku} eq $cart_product->{ec_sku} ){
+					$cart_product->{ec_price} = $product->{ec_price};
+				}
+			}
+			$cart_product->{ec_quantity} += $product->{ec_quantity};
+			if(  $cart_product->{ec_quantity} <= 0 ){
+			  splice @{$ec_cart->{items}}, $index, 1;
+			}
+  		$app->session->write( 'ec_cart', $ec_cart );
+			return $cart_product;
     }
-    else{
-      $cart_product->delete;
-    }
-  } 
-  else{
-    my $cart_id = $self->cart( $params )->{id};
-    my $place = $self->dbic->schema($schema)->resultset($self->cart_product_name)->search({ cart_id=> $cart_id })->get_column('place')->max() || 0;
-     $cart_product = $self->dbic->schema($schema)->resultset($self->cart_product_name)->create({
-      cart_id => $cart_id, 
-      sku => $product->{ec_sku},
-      price => $product->{ec_price} || 0,
-      quantity => $product->{ec_quantity} || 0,
-      place => $place + 1,
-    });
+		$index++;
   }
-  return $cart_product ? { $cart_product->get_columns } : { error => "Error trying to create CartProduct."};
+	push @{$ec_cart->{items}}, $product;
+  $app->session->write( 'ec_cart', $ec_cart );
+	
+	return $product;
 };
 
 sub cart {
-  my ($self, $params ) = @_;
-  my ($name, $schema, $status, $cart_id) = _parse_params($params);
+  my ( $self ) = @_;
   my $app = $self->app;
-  my $cart_info = {
-    session => $self->app->session->{'id'},
-  };
-
-  $cart_info->{name} = $name || 'main';
-  $cart_info->{status} = $status ? $status : 0;
-
-  if ( $cart_id ){
-    $cart_info->{id} = $cart_id;
-    delete $cart_info->{session};
-  }
-  
   $app->execute_hook('plugin.cart.before_cart');
-  my $cart = undef;
-  if ( $cart_info->{status} == 0 ){
-    $cart = $self->dbic->schema($schema)->resultset($self->cart_name)->find_or_create($cart_info);
-  }
-  else{
-    $cart = $self->schema($schema)->resultset($self->cart_name)->search($cart_info)->first;
-    return from_json( $cart->log )->{ec_cart};
-  }
-  $params->{cart_id} = $cart->id if $cart;
-
   my $ec_cart = $app->session->read('ec_cart');
-  $ec_cart->{cart} = { $cart->get_columns } if $cart;
-  $app->session->write( 'ec_cart', $ec_cart );
-
-  #Get cart items
-  my $cart_items = $self->cart_items ( $params );
- 
-  #get subtotal
-  my $subtotal = $self->subtotal;
-
+	$ec_cart = { items => [] } unless $ec_cart->{items};
+	$app->session->write('ec_cart',$ec_cart);
   $self->adjustments;
   $ec_cart = $app->session->read('ec_cart');
-
-  my $total = $self->get_total; 
-  $ec_cart = $app->session->read('ec_cart');
-
   $app->execute_hook('plugin.cart.after_cart');
-  return { $cart->get_columns, items => $ec_cart->{cart}->{items} , subtotal => $ec_cart->{cart}->{subtotal} } if $cart;
-
-};
-
-sub cart_items {
-  my ( $self, $params ) = @_;
-  my ($name, $schema, $status, $cart_id ) = _parse_params($params);
-  my $app = $self->app;
-  my $arr_items = [];
-  my $cart_items = $self->dbic->schema($schema)->resultset($self->cart_product_name)->search( 
-    { 
-      cart_id => $cart_id,
-    },
-    {
-      order_by => { '-asc' => 'place' }
-    }
-  );
-
-  while( my $ci = $cart_items->next ){
-    my $product =  undef;
-
-    if($self->product_name && $self->product_pk ){
-      $product = $self->dbic->schema($schema)->resultset($self->product_name)->search({ $self->product_pk => $ci->sku })->single;
-    }
-
-    my $item_subtotal = $self->item_subtotal( { ec_sku => $ci->sku, ec_quantity => $ci->quantity, ec_price => $ci->price } ) || 0;
-    
-    if ($product) {
-      push @{$arr_items}, { $product->get_columns, ec_sku => $ci->sku , ec_quantity => $ci->quantity, ec_price  => $ci->price, ec_subtotal => $item_subtotal  };
-    }
-    else{
-      push @{$arr_items}, { ec_sku => $ci->sku , ec_quantity => $ci->quantity, ec_price  => $ci->price, ec_subtotal => $item_subtotal };
-    }
-  } 
-
-  my $ec_cart = $app->session->read('ec_cart');
-  $ec_cart->{cart}->{items} = $arr_items;
-  $app->session->write( 'ec_cart', $ec_cart );
-  
-  return { items => $ec_cart->{cart}->{items} };
+  $ec_cart = $app->session->read('ec_cart');
+  return $ec_cart;
 };
 
 sub item_subtotal{
@@ -517,27 +390,21 @@ sub item_subtotal{
   $subtotal = $ec_cart->{item}->{subtotal};
 
   delete $ec_cart->{item};
-
   $app->session->write( 'ec_cart', $ec_cart );
-
   $subtotal;
 };
 
 
 sub subtotal{
   my ($self, $params) = @_;
-  my ($name,$schema) = _parse_params($params);
   my $app = $self->app;
 
   $self->execute_hook ('plugin.cart.before_subtotal');
-
   my $ec_cart = $app->session->read('ec_cart');
   my $subtotal = 0;
-
   foreach my $item_subtotal ( @{ $ec_cart->{cart}->{items} } ){
     $subtotal += $item_subtotal->{ec_subtotal};
   }
-
   $ec_cart->{cart}->{subtotal} = $subtotal;
   $app->session->write('ec_cart',$ec_cart);
   $self->execute_hook ('plugin.cart.after_subtotal');
@@ -548,16 +415,7 @@ sub subtotal{
 
 sub clear_cart {
   my ($self, $params ) = @_;
-  my ($name, $schema) = _parse_params($params);
-
   $self->execute_hook ('plugin.cart.before_clear_cart');
-  #get cart_id
-  my $cart_id = $self->cart({ name => $name, schema => $schema })->{id}; 
-
-  #delete the cart_product info
-  $self->schema($schema)->resultset($self->cart_product_name)->search({ cart_id => $cart_id })->delete_all;
-  #delete products
-  $self->schema($schema)->resultset($self->cart_name)->search({ id => $cart_id })->delete;
   $self->app->session->delete('ec_cart');
   $self->execute_hook ('plugin.cart.after_clear_cart');
 }
@@ -565,7 +423,6 @@ sub clear_cart {
 
 sub cart_add {
   my ($self, $params) = @_;
-  my ($name, $schema) = _parse_params($params);
 
   my $app = $self->app;
   my $form_params = { $app->request->params };
@@ -592,15 +449,6 @@ sub cart_add {
       $self->app->redirect( $app->request->referer || $app->request->uri  );
     }
     else{
-      if($self->product_name && $self->product_pk && $self->product_price ) {
-        my $ec_price = $self->product_price;
-        my $product_temp = $self->dbic->schema($schema)->resultset($self->product_name)->search({ $self->product_pk => $ec_cart->{add}->{form}->{ec_sku}  })->single;
-        if ( $product_temp ){
-          my $ec_price = $self->product_price;
-          $ec_cart->{add}->{form}->{ec_price} = $product_temp->$ec_price;
-        }
-      }
-       
       $app->execute_hook( 'plugin.cart.before_cart_add_item' );
       $product = $self->cart_add_item({
           ec_sku => $ec_cart->{add}->{form}->{'ec_sku'},
@@ -692,35 +540,18 @@ sub checkout{
 
 sub close_cart{
   my ($self, $params) = @_;
-  my ($name, $schema) = _parse_params($params);
   my $app = $self->app;
-
-  my $cart = $self->cart({ name => $name, schema => $schema });
-  return { error => 'Cart without items' } unless @{$cart->{items}} > 0;
-
-  my $cart_temp = $self->dbic->schema($schema)->resultset($self->cart_name)->find($cart->{id});
-  return { error => 'Cart not found' } unless $cart_temp;
-
+  my $ec_cart = $self->cart;
+  return { error => 'Cart without items' } unless @{$ec_cart->{items}} > 0;
   $app->execute_hook( 'plugin.cart.before_close_cart' ); 
-  $cart_temp->update({
-    status => 1,
-    log => to_json( {
-      session => $app->session->{id},
-      data => $app->session->{data},
-      ec_cart => $app->session->read('ec_cart'),
-    })
-  });
-
-  $app->session->delete( 'ec_cart' );
-  $app->session->write('ec_cart',{ id => $cart_temp->id } );
+	$ec_cart->{cart}->{session} = $app->session->id;
+	$ec_cart->{cart}->{status} = 1;
+  $app->session->write('ec_cart', $ec_cart );
   $app->execute_hook( 'plugin.cart.after_close_cart' ); 
-  my $ec_cart = $app->session->read('ec_cart');
-  $ec_cart->{cart}->{id};
 }
 
 sub adjustments {
   my ($self, $params) = @_;
-  my ($name, $schema) = _parse_params($params);
   my $app = $self->app;
   my $ec_cart = $app->session->read('ec_cart');
   my $default_adjustments = [
@@ -760,10 +591,6 @@ sub get_total {
   return $total;
 }
 
-sub _parse_params {
-  my ($params) = @_;
-  return ($params->{name}, $params->{schema}, $params->{status}, $params->{cart_id});
-}
 
 1;
 __END__

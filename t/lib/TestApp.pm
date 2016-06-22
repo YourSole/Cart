@@ -15,8 +15,8 @@ get '/cart/new/' => sub {
 
 get '/cart/new/:cart_new?' => sub {
   my ($cart_name) = param('cart_new'); 
-  my $cart = cart( { name => $cart_name } ); 
-  $cart->{'name'};
+  my $cart = cart; 
+  scalar @{$cart->{items}};
 };
 
 post '/cart/add_product' => sub {
@@ -40,15 +40,12 @@ get '/cart/clear_cart/' => sub {
   Dumper(cart->{items});
 };
 
-get '/cart/:schema?' => sub {
-  my $schema = param('schema');
-  my $cart = cart({ schema => $schema });
-  Dumper($cart->{items});
+get '/cart_' => sub {
+  Dumper(cart);
 };
-get '/cart/clear_cart/:schema?' => sub {
-  my $schema = param('schema');
-  clear_cart( { name => 'main' , schema => $schema } );
-  Dumper(cart({ schema => $schema})->{items});
+get '/cart/clear_cart' => sub {
+  clear_cart;
+  Dumper(cart->{items});
 };
 
 get '/cart/subtotal' => sub {
