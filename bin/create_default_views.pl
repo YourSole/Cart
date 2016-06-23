@@ -17,11 +17,10 @@ sub create_receipt_view;
 
 
 # (1) quit unless we have the correct number of command-line args
-my $num_args = $#ARGV + 1;
-if ($num_args < 1) {
+if ($ARGV[0] and ($ARGV[0] eq '-h' or $ARGV[0] eq '--help')) {
     print "\nUsage: ./bin/create_views.pl open_tag_def close_tag_def \n";
-    print "\ntag_def it's the open a close tag for the template, by default open_tag_def is <%  and close_tag_def is %>\n";
-    print "\n e.g. ./bin/create_views.pl partnumber <% %>\n";
+    print "\ntag_def is the open and close tag for the template, by default open_tag_def is <%  and close_tag_def is %>\n";
+    print "\n e.g. ./bin/create_views.pl '<%' '%>'\n";
     exit;
 }
 $open_t =  $ARGV[0] || $open_t;
