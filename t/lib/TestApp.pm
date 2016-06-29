@@ -1,8 +1,28 @@
 package t::lib::TestApp;
-
 use Dancer2;
-use Dancer2::Plugin::Cart;
 use Data::Dumper;
+BEGIN{
+  set plugins => {
+    'Cart' => {
+			'product_list' => [
+			{
+							'ec_sku' => 'SU01',
+							'ec_price' => 10,
+			},
+			{
+							'ec_sku' => 'SU02',
+							'ec_price' => 15,
+			},
+			{
+							'ec_sku' => 'SU03',
+							'ec_price' => 20,
+			},
+			]
+    },
+	}
+}
+
+use Dancer2::Plugin::Cart;
 
 get '/' => sub {
   'Hello World'
@@ -32,12 +52,12 @@ post '/cart/add_product_bar' => sub {
 };
 
 get '/cart/products' => sub {
-  Dumper(cart->{items});
+  Dumper(cart->{cart}->{items});
 };
 
 get '/cart/clear_cart/' => sub {
   clear_cart;
-  Dumper(cart->{items});
+  Dumper(cart->{cart}->{items});
 };
 
 get '/cart_' => sub {

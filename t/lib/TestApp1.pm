@@ -1,6 +1,7 @@
 package t::lib::TestApp1;
 
 use Dancer2;
+
 BEGIN{
   set plugins => {
       'Cart' => {
@@ -21,6 +22,7 @@ BEGIN{
       },
   };
 }
+
 use Dancer2::Plugin::Cart;
 
 hook 'plugin.cart.validate_shipping_params' => sub {
@@ -47,13 +49,13 @@ hook 'plugin.cart.before_cart_add' => sub {
 };
 
 hook 'plugin.cart.after_cart_add' => sub {
-  my $cart = cart;
-  foreach my $item ( @{$cart->{items}} ){
+  my $ec_cart = cart;
+  foreach my $item ( @{$ec_cart->{cart}->{items}} ){
     if ( $item->{ec_sku} eq 'SUNN' ){
       $item->{ec_price} = -1;
     }
   }
-	session->write('ec_cart', $cart );
+	session->write('ec_cart', $ec_cart );
 };
 
 1;

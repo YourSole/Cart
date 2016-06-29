@@ -7,7 +7,6 @@ use JSON;
 our $VERSION = '0.0001';  #Version
 
 BEGIN{
-
   has 'product_list' => (
     is => 'ro',
     from_config => 1,
@@ -111,8 +110,6 @@ BEGIN{
     after_close_cart
     before_clear_cart
     after_clear_cart
-    before_item_subtotal
-    after_item_subtotal
     before_subtotal
     after_subtotal
     adjustments
@@ -137,7 +134,10 @@ sub BUILD {
         if( -e $self->app->config->{views}.$template ) {
           $app->template( $template, {
             product_list => $self->product_list
-          } );
+          },
+					{
+						layout => 'cart.tt'
+					});
         }
         else{
           _products_view({ product_list => $self->product_list });
@@ -313,44 +313,43 @@ sub BUILD {
 
 
 sub products {
-  my ($self, $params) = @_;
+  my ( $self ) = @_;
   my $app = $self->app;
-
-	if ( scalar @{$self->product_list} > 0 ){
-		return $self->product_list;
+	my $ec_cart = $self->cart;
+	if ( $self->product_list ){
+		 $ec_cart->{products} = $self->product_list;
 	}
-
-	my @products = [];
+ 	$app->session->write( 'ec_cart', $ec_cart );
   $app->execute_hook('plugin.cart.products');
-	my $ec_cart = cart;
-	if ( $ec_cart->{products} ){
-		return $ec_cart->{products};
-	}
-	return @products;
+	return $ec_cart->{products};
 }
+
 sub cart_add_item {
   my ( $self, $product ) = @_;
   my $app = $self->app;
 	my $index = 0;
 	my $ec_cart = $self->cart; 
-	$ec_cart->{items} = [] unless $ec_cart->{items};
-	foreach my $cart_product ( @{$ec_cart->{items}} ){
+	$ec_cart->{cart}->{items} = [] unless $ec_cart->{cart}->{items};
+	foreach my $cart_product ( @{$ec_cart->{cart}->{items}} ){
     if( $cart_product->{ec_sku} eq $product->{ec_sku} ){
-			foreach my $product ( @{$self->product_list} ){
-				if ($product->{ec_sku} eq $cart_product->{ec_sku} ){
-					$cart_product->{ec_price} = $product->{ec_price};
-				}
-			}
 			$cart_product->{ec_quantity} += $product->{ec_quantity};
+			$cart_product->{ec_subtotal} = $cart_product->{ec_quantity} * $cart_product->{ec_price};
 			if(  $cart_product->{ec_quantity} <= 0 ){
-			  splice @{$ec_cart->{items}}, $index, 1;
+			  splice @{$ec_cart->{cart}->{items}}, $index, 1;
 			}
   		$app->session->write( 'ec_cart', $ec_cart );
 			return $cart_product;
     }
 		$index++;
   }
-	push @{$ec_cart->{items}}, $product;
+	
+  foreach my $product_item ( @{$self->products} ){
+		if( $product_item->{ec_sku} eq $product->{ec_sku} ){
+			$product->{ec_price} = $product_item->{ec_price} * $product->{ec_quantity};
+			$product->{ec_subtotal} = $product->{ec_price};
+		}
+	}
+	push @{$ec_cart->{cart}->{items}}, $product;
   $app->session->write( 'ec_cart', $ec_cart );
 	
 	return $product;
@@ -361,37 +360,15 @@ sub cart {
   my $app = $self->app;
   $app->execute_hook('plugin.cart.before_cart');
   my $ec_cart = $app->session->read('ec_cart');
-	$ec_cart = { items => [] } unless $ec_cart->{items};
-	$app->session->write('ec_cart',$ec_cart);
+	$ec_cart->{cart}->{items} = [] unless $ec_cart->{cart}->{items};
+	$app->session->write('ec_cart', $ec_cart);
+	$self->subtotal;
   $self->adjustments;
+  $self->total;
   $ec_cart = $app->session->read('ec_cart');
   $app->execute_hook('plugin.cart.after_cart');
   $ec_cart = $app->session->read('ec_cart');
   return $ec_cart;
-};
-
-sub item_subtotal{
-  my ($self, $params) = @_;
-  my $app = $self->app;
-  my $subtotal = 0;
-  my $ec_cart = $app->session->read('ec_cart');
-
-  $ec_cart->{item} = $params;
-  $app->session->write( 'ec_cart', $ec_cart );
-
-  $app->execute_hook('plugin.cart.before_item_subtotal');
-  $ec_cart = $app->session->read('ec_cart');
-
-  $ec_cart->{item}->{subtotal} = $ec_cart->{item}->{ec_price} * $ec_cart->{item}->{ec_quantity};
-  $app->session->write( 'ec_cart', $ec_cart );
-
-  $app->execute_hook('plugin.cart.after_item_subtotal');
-  $ec_cart = $app->session->read('ec_cart');
-  $subtotal = $ec_cart->{item}->{subtotal};
-
-  delete $ec_cart->{item};
-  $app->session->write( 'ec_cart', $ec_cart );
-  $subtotal;
 };
 
 
@@ -403,7 +380,7 @@ sub subtotal{
   my $ec_cart = $app->session->read('ec_cart');
   my $subtotal = 0;
   foreach my $item_subtotal ( @{ $ec_cart->{cart}->{items} } ){
-    $subtotal += $item_subtotal->{ec_subtotal};
+    $subtotal += $item_subtotal->{ec_subtotal} if $item_subtotal->{ec_subtotal};
   }
   $ec_cart->{cart}->{subtotal} = $subtotal;
   $app->session->write('ec_cart',$ec_cart);
@@ -453,7 +430,6 @@ sub cart_add {
       $product = $self->cart_add_item({
           ec_sku => $ec_cart->{add}->{form}->{'ec_sku'},
           ec_quantity => $ec_cart->{add}->{form}->{'ec_quantity'},
-          ec_price => $ec_cart->{add}->{form}->{'ec_price'} || 0
         }
       );
       $app->execute_hook( 'plugin.cart.after_cart_add_item' );
@@ -542,7 +518,7 @@ sub close_cart{
   my ($self, $params) = @_;
   my $app = $self->app;
   my $ec_cart = $self->cart;
-  return { error => 'Cart without items' } unless @{$ec_cart->{items}} > 0;
+  return { error => 'Cart without items' } unless @{$ec_cart->{cart}->{items}} > 0;
   $app->execute_hook( 'plugin.cart.before_close_cart' ); 
 	$ec_cart->{cart}->{session} = $app->session->id;
 	$ec_cart->{cart}->{status} = 1;
@@ -574,20 +550,17 @@ sub adjustments {
 }
 
 
-sub get_total {
+sub total {
   my ($self) = shift;
   my $app = $self->app;
   my $total = 0;
   my $ec_cart = $app->session->read('ec_cart');
-  
   $total += $ec_cart->{cart}->{subtotal};
   foreach my $adjustment ( @{$ec_cart->{cart}->{adjustments}}){
     $total += $adjustment->{value};
   }
-
   $ec_cart->{cart}->{total} = $total;
   $app->session->write('ec_cart', $ec_cart );
-
   return $total;
 }
 

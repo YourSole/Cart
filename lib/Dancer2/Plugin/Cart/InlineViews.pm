@@ -42,6 +42,7 @@ sub _cart_view{
   }
   $page .=  "<h1>Cart</h1>\n";
   $page .= _cart_info({ ec_cart => $ec_cart, editable => 1 });
+  $page .= "\n<p><a href='cart/clear'> Clear your cart. </a></p>";
   $page .= "<a href='products'> Continue shopping. </a>\n";
   $page .= "\n<p><a href='cart/shipping'> Checkout. </a></p>";
   $page;
@@ -53,7 +54,7 @@ sub _cart_info{
   my $editable = $params->{editable};
 
   my $page = "";
-  if (@{$ec_cart->{items}} > 0 ) {
+  if (@{$ec_cart->{cart}->{items}} > 0 ) {
     $page .= "
     <table>
       <thead>
@@ -62,7 +63,7 @@ sub _cart_info{
         </tr>
       </thead>
       <tbody>";
-    foreach my $item (@{$ec_cart->{items}}){
+    foreach my $item (@{$ec_cart->{cart}->{items}}){
       $page .= "
         <tr>
           <td>".$item->{ec_sku}."</td>
@@ -114,7 +115,6 @@ sub _cart_info{
       </tfoot>
     </table>";
 
-    $page .= "\n<p><a href='clear'> Clear your cart. </a></p>";
   }
   else{
     $page .= "Your cart is empty.";
@@ -132,6 +132,7 @@ sub _shipping_view{
   $page .= "
   <h1>Shipping</h1>";
   $page .= _cart_info({ ec_cart => $ec_cart });
+  $page .= "\n<p><a href='clear'> Clear your cart. </a></p>";
   if ( $ec_cart->{shipping}->{error} ){
     foreach my $error ( @{$ec_cart->{shipping}->{error}} ){
       $page .= "<p>".$error."</p>";
@@ -154,6 +155,7 @@ sub _billing_view{
   $page .= "
   <h1>Billing</h1>";
   $page .= _cart_info({ ec_cart => $ec_cart });
+  $page .= "\n<p><a href='clear'> Clear your cart. </a></p>";
 
   if ( $ec_cart->{billing}->{error} ){
     foreach my $error ( @{$ec_cart->{billing}->{error}} ){
@@ -176,6 +178,7 @@ sub _review_view{
   $page = "
     <h1>Review</h1>";
   $page .= _cart_info({ ec_cart => $ec_cart });
+  $page .= "\n<p><a href='cart/clear'> Clear your cart. </a></p>";
   $page .="<table>
       <tr><td>Shipping - email</td><td>".$ec_cart->{shipping}->{form}->{email}."</td></tr>
       <tr><td>Billing - email</td><td>".$ec_cart->{billing}->{form}->{email}."</td></tr>
@@ -196,7 +199,7 @@ sub _receipt_view{
 
   $page .= "
   <p>Checkout has been successful!!</p>
-  <h1>Receipt #: ".$cart->{cart}->{session}." </h1>";
+  <h1>Receipt #: ".$ec_cart->{cart}->{session}." </h1>";
   $page .= _cart_info({ ec_cart => $cart });
   $page .= "<h2>Log Info</h2>
   <table>

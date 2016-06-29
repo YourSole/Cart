@@ -10,6 +10,24 @@ use File::Temp qw(tempfile);
 use HTTP::Cookies;
 
 use TestApp;
+t::lib::TestApp::set plugins => {
+    'Cart' => {
+			'product_list' => [
+			{
+							'ec_sku' => 'SU01',
+							'ec_price' => 10,
+			},
+			{
+							'ec_sku' => 'SU02',
+							'ec_price' => 15,
+			},
+			{
+							'ec_sku' => 'SU03',
+							'ec_price' => 20,
+			},
+			]
+    },
+};
 
 my $app = Dancer2->runner->psgi_app;
 is( ref $app, 'CODE', 'Got app' );
@@ -37,7 +55,7 @@ subtest 'adding existing product on cart' => sub {
   $jar->add_cookie_header($req);
   $res = $test->request( $req );
   like(
-      $res->content, qr/'ec_quantity'\s=>\s8/,'Get content for /cart/add_product/SU03'
+      $res->content, qr/'ec_quantity'\s=>\s8/,'Get content for /cart/add_product/SU01'
   );
 };
 
