@@ -1,18 +1,28 @@
 package t::lib::TestApp1;
 
 use Dancer2;
+
 BEGIN{
   set plugins => {
       'Cart' => {
-        product_name => 'EcProduct',
-        product_pk => 'sku',
-        product_price => 'price',
-        product_filter => "{ sku => { 'like', '%SU0%'} }",
-        product_order => "{ -asc => 'sku' }",
+							'product_list' => [
+								{
+									'ec_sku' => 'SU01',
+									'ec_price' => 10,
+								},
+								{
+									'ec_sku' => 'SU02',
+									'ec_price' => 15,
+								},
+								{
+									'ec_sku' => 'SU03',
+									'ec_price' => 20,
+								},
+							],
       },
   };
 }
-use Dancer2::Plugin::DBIC;
+
 use Dancer2::Plugin::Cart;
 
 hook 'plugin.cart.validate_shipping_params' => sub {
@@ -39,16 +49,13 @@ hook 'plugin.cart.before_cart_add' => sub {
 };
 
 hook 'plugin.cart.after_cart_add' => sub {
-  my $cart = cart;
-  foreach my $item ( @{$cart->{items}} ){
+  my $ec_cart = cart;
+  foreach my $item ( @{$ec_cart->{cart}->{items}} ){
     if ( $item->{ec_sku} eq 'SUNN' ){
-      my $cart_product = schema->resultset('EcCartProduct')->search({
-        cart_id => $cart->{id},
-        sku => 'SUNN'
-      })->first;
-      $cart_product->update({ price => -1 });
+      $item->{ec_price} = -1;
     }
   }
+	session->write('ec_cart', $ec_cart );
 };
 
 1;

@@ -1,8 +1,28 @@
 package t::lib::TestApp;
-
 use Dancer2;
-use Dancer2::Plugin::Cart;
 use Data::Dumper;
+BEGIN{
+  set plugins => {
+    'Cart' => {
+			'product_list' => [
+			{
+							'ec_sku' => 'SU01',
+							'ec_price' => 10,
+			},
+			{
+							'ec_sku' => 'SU02',
+							'ec_price' => 15,
+			},
+			{
+							'ec_sku' => 'SU03',
+							'ec_price' => 20,
+			},
+			]
+    },
+	}
+}
+
+use Dancer2::Plugin::Cart;
 
 get '/' => sub {
   'Hello World'
@@ -15,8 +35,8 @@ get '/cart/new/' => sub {
 
 get '/cart/new/:cart_new?' => sub {
   my ($cart_name) = param('cart_new'); 
-  my $cart = cart( { name => $cart_name } ); 
-  $cart->{'name'};
+  my $cart = cart; 
+  scalar @{$cart->{items}};
 };
 
 post '/cart/add_product' => sub {
@@ -32,23 +52,20 @@ post '/cart/add_product_bar' => sub {
 };
 
 get '/cart/products' => sub {
-  Dumper(cart->{items});
+  Dumper(cart->{cart}->{items});
 };
 
 get '/cart/clear_cart/' => sub {
   clear_cart;
-  Dumper(cart->{items});
+  Dumper(cart->{cart}->{items});
 };
 
-get '/cart/:schema?' => sub {
-  my $schema = param('schema');
-  my $cart = cart({ schema => $schema });
-  Dumper($cart->{items});
+get '/cart_' => sub {
+  Dumper(cart);
 };
-get '/cart/clear_cart/:schema?' => sub {
-  my $schema = param('schema');
-  clear_cart( { name => 'main' , schema => $schema } );
-  Dumper(cart({ schema => $schema})->{items});
+get '/cart/clear_cart' => sub {
+  clear_cart;
+  Dumper(cart->{items});
 };
 
 get '/cart/subtotal' => sub {

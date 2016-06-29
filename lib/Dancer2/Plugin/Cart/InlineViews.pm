@@ -1,6 +1,6 @@
 sub _products_view{
   my ($params) = @_;
-  my $products = $params->{products};
+  my $products = $params->{product_list};
   my $page ="";
   $page .= "
   <h1>Product list</h1>
@@ -42,6 +42,7 @@ sub _cart_view{
   }
   $page .=  "<h1>Cart</h1>\n";
   $page .= _cart_info({ ec_cart => $ec_cart, editable => 1 });
+  $page .= "\n<p><a href='cart/clear'> Clear your cart. </a></p>";
   $page .= "<a href='products'> Continue shopping. </a>\n";
   $page .= "\n<p><a href='cart/shipping'> Checkout. </a></p>";
   $page;
@@ -114,7 +115,6 @@ sub _cart_info{
       </tfoot>
     </table>";
 
-    $page .= "\n<p><a href='clear'> Clear your cart. </a></p>";
   }
   else{
     $page .= "Your cart is empty.";
@@ -132,6 +132,7 @@ sub _shipping_view{
   $page .= "
   <h1>Shipping</h1>";
   $page .= _cart_info({ ec_cart => $ec_cart });
+  $page .= "\n<p><a href='clear'> Clear your cart. </a></p>";
   if ( $ec_cart->{shipping}->{error} ){
     foreach my $error ( @{$ec_cart->{shipping}->{error}} ){
       $page .= "<p>".$error."</p>";
@@ -154,6 +155,7 @@ sub _billing_view{
   $page .= "
   <h1>Billing</h1>";
   $page .= _cart_info({ ec_cart => $ec_cart });
+  $page .= "\n<p><a href='clear'> Clear your cart. </a></p>";
 
   if ( $ec_cart->{billing}->{error} ){
     foreach my $error ( @{$ec_cart->{billing}->{error}} ){
@@ -176,6 +178,7 @@ sub _review_view{
   $page = "
     <h1>Review</h1>";
   $page .= _cart_info({ ec_cart => $ec_cart });
+  $page .= "\n<p><a href='cart/clear'> Clear your cart. </a></p>";
   $page .="<table>
       <tr><td>Shipping - email</td><td>".$ec_cart->{shipping}->{form}->{email}."</td></tr>
       <tr><td>Billing - email</td><td>".$ec_cart->{billing}->{form}->{email}."</td></tr>
@@ -191,17 +194,17 @@ sub _review_view{
 
 sub _receipt_view{
   my ($params) = @_;
-  my $cart = $params->{cart};
+  my $ec_cart = $params->{ec_cart};
   my $page = "";
 
   $page .= "
   <p>Checkout has been successful!!</p>
-  <h1>Receipt #: ".$cart->{cart}->{id}." </h1>";
+  <h1>Receipt #: ".$ec_cart->{cart}->{session}." </h1>";
   $page .= _cart_info({ ec_cart => $cart });
   $page .= "<h2>Log Info</h2>
   <table>
-    <tr><td>Session :</td><td>".$cart->{cart}->{session}."</td></tr>
-    <tr><td>Email</td><td>".$cart->{shipping}->{form}->{email}."</td>
+    <tr><td>Session :</td><td>".$ec_cart->{cart}->{session}."</td></tr>
+    <tr><td>Email</td><td>".$ec_cart->{shipping}->{form}->{email}."</td>
   </table>
   <p> <a href='../products'>Go to products</a> </p>";
   $page;  
