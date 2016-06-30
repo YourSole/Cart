@@ -6,6 +6,7 @@ use warnings;
 our $open_t = '<%';
 our $close_t = '%>';
 
+sub create_cart_layout;
 sub create_products_view;
 sub create_cart_view;
 sub create_checkout_view;
@@ -31,6 +32,10 @@ my $dir = 'views';
 if (-e $dir and -d $dir) {
   make_path('views/cart/');
   print "Creating views/cart directory\n";
+  make_path('views/layouts/');
+  print "Creating views/layouts directory\n";
+	create_cart_layout;
+	print "Layout created at $dir/layouts/cart.tt\n";
   create_products_view;
   print "Products view created at $dir/products.tt\n";
   create_cart_view;
@@ -48,11 +53,61 @@ else {
   print "view directory needs to exists in order to proceed, please be sure you are in the root of your application.\n";
 }
 
+
+
+sub create_cart_layout{
+  my $page = "";
+  $page .= "
+		<!DOCTYPE html>
+		<html lang='en'>
+		<head>
+			<meta name='viewport' content='width=device-width, initial-scale=1.0, user-scalable=yes'>
+			<title>Ec Cart</title>
+			<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css'>
+			<script src='https://code.jquery.com/jquery-2.2.4.min.js'></script>
+			<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js'></script>
+		</head>
+		<body>
+  <nav class='navbar navbar-default'>
+    
+      <div class='navbar-header'>
+        <button type='button' class='navbar-toggle collapsed' data-toggle='collapse' data-target='#menu-options' aria-expanded='false'>
+          <span class='sr-only'>Toggle navigation</span>
+          <span class='icon-bar'></span>
+          <span class='icon-bar'></span>
+          <span class='icon-bar'></span>
+        </button>
+        <a class='navbar-brand' href='#'>Ec-Cart</a>
+      </div>
+    </div>
+    <div class='collapse navbar-collapse' id='menu-options'>
+      <ul class='nav navbar-nav navbar-right'>
+        <li><a href='/products'>Products</a></li>
+        <li><a href='/cart'><span class='glyphicon glyphicon-shopping-cart' aria-hidden='true'></span></a></li>
+         <li class='dropdown'>
+          <a href='#' class='dropdown-toggle' data-toggle='dropdown' role='button' aria-haspopup='true' aria-expanded='false'>About<span class='caret'></span></a>
+          <ul class='dropdown-menu'>
+            <li><a href='https://github.com/YourSole/Cart'>Github</a></li>
+          </ul>
+        </li>
+      </ul>
+</nav>
+			<div class='container'>
+				$open_t content $close_t 
+			</div>
+		</body>
+		</html>
+	";
+  create_view( 'layouts/cart.tt', $page );
+  return 1;
+};
+
+
 sub create_products_view{
   my $page = "";
   $page .= "
   <h1>Product list</h1>
-  <table>
+  <table class='table table-bordered'>
     <thead>
       <tr>
         <th>Sku</th><th>Price</th><th>Action</th>
@@ -60,7 +115,7 @@ sub create_products_view{
     </thead>
     <tbody>";
     $page .= "
-    $open_t FOREACH product IN products $close_t
+    $open_t FOREACH product IN product_list $close_t
       <tr>
         <td> $open_t product.ec_sku $close_t </td>
         <td> $open_t product.ec_price $close_t </td>
@@ -88,7 +143,7 @@ sub _cart_view {
   my $colspan = $editable?4:2;
   my $page = "$open_t IF $ec_cart.cart.items.size $close_t";
     $page .= "<h2>Cart info</h2>
-    <table>
+    <table class='table table-bordered'>
       <thead>
         <tr>
           <th>SKU</th>";
@@ -151,7 +206,6 @@ sub _cart_view {
 sub create_cart_view{
   my $page = "";
 
-  $page .=  "<h1>Cart</h1>";
   $page .= _cart_view({ editable => 1 });
   $page .= "$open_t IF ec_cart.cart.items.size > 0 $close_t <p><a href='cart/shipping'> Checkout </a></p>$open_t END $close_t
   <p> <a href='products'>Continue shopping</a></p>";
@@ -161,8 +215,11 @@ sub create_cart_view{
 };
 
 sub create_shipping_view{
+  my ($params) = @_;
+  my $ec_cart = $params->{ec_cart} || 'ec_cart';
   my $page ="<h1>Shipping</h1>";
   $page .= _cart_view;
+  $page .= "$open_t IF $ec_cart.cart.items.size $close_t";
   $page .= "
   $open_t FOREACH error = ec_cart.shipping.error $close_t
     <p> $open_t error $close_t </p>
@@ -173,12 +230,16 @@ sub create_shipping_view{
   </form>";
   
   $page .= "<p><a href='../cart'> Cart </a></p>";
+	$page .= "$open_t END $close_t";
   create_view( 'cart/shipping.tt', $page );
 }
 
 sub create_billing_view{
+  my ($params) = @_;
+  my $ec_cart = $params->{ec_cart} || 'ec_cart';
   my $page .= "<h1>Billing</h1>";
   $page .= _cart_view;
+  $page .= "$open_t IF $ec_cart.cart.items.size $close_t";
   $page .= "
   $open_t FOREACH error = ec_cart.billing.error $close_t
     <p> $open_t error $close_t </p>
@@ -188,15 +249,19 @@ sub create_billing_view{
    <p> Email <input type='text' name='email' value='$open_t ec_cart.billing.form.email $close_t' paceholder='email\@domain.com'><input type='submit' value = 'Continue'> </p>
   </form>";
   $page .= "<p><a href='../cart'> Cart </a></p>";
+	$page .= "$open_t END $close_t";
   create_view( 'cart/billing.tt', $page );
 }
 
 sub create_review_view{
+  my ($params) = @_;
+  my $ec_cart = $params->{ec_cart} || 'ec_cart';
   my $page = "";
   $page .= "
   <h1>Review</h1>";
   $page .= _cart_view;
-  $page .= "<table>
+  $page .= "$open_t IF $ec_cart.cart.items.size $close_t";
+  $page .= "<table class='table table-bordered'>
       <tr><td>Shipping - email</td><td>$open_t ec_cart.shipping.form.email $close_t</td></tr>
       <tr><td>Billing - email</td><td>$open_t ec_cart.billing.form.email $close_t</td></tr>
   </table>
@@ -204,22 +269,28 @@ sub create_review_view{
   <input type='submit' value = 'Place Order'>
   </form>";
   $page .= "<p> <a href='../cart'>Cart</a> </p>";
+	$page .= "$open_t END $close_t";
   create_view( 'cart/review.tt', $page );
 }
 
 sub create_receipt_view{
-  my $page ="
-  <p>Checkout has been successful!!</p>
-  <h1>Receipt #: $open_t cart.cart.id $close_t </h1>
-  ";
+  my ($params) = @_;
+  my $ec_cart = $params->{ec_cart} || 'cart';
+	my $page .= '<h1>Receipt</h1>';
   $page .= _cart_view({ ec_cart => 'cart'});
+  $page .= "$open_t IF $ec_cart.cart.items.size $close_t";
+  $page .="
+  <p>Checkout has been successful!!</p>
+  <h2>Receipt #: $open_t $ec_cart.cart.session $close_t </h2>
+  ";
   $page .= "
   <h2>Log Info</h2>
-  <table>
-    <tr><td>Session:</td><td>$open_t  cart.cart.session $close_t</td></tr>
-    <tr><td>Email</td><td> $open_t cart.shipping.form.email $close_t </td>
+  <table class='table table-bordered'>
+    <tr><td>Session:</td><td>$open_t  $ec_cart.cart.session $close_t</td></tr>
+    <tr><td>Email</td><td> $open_t $ec_cart.shipping.form.email $close_t </td>
   </table>
   <p><a href='../products'> Product index </a></p>";
+	$page .= "$open_t END $close_t";
   create_view( 'cart/receipt.tt', $page );
 }
 

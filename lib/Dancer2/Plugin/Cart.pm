@@ -130,8 +130,8 @@ sub BUILD {
         my $app = shift;
         #generate session if didn't exists
         $app->session;
-        my $template = $self->products_view_template || '/products.tt' ;
-        if( -e $self->app->config->{views}.$template ) {
+        my $template = $self->products_view_template || 'products' ;
+        if( -e $self->app->config->{views}.'/'.$template.'.tt' ) {
           $app->template( $template, {
             product_list => $self->product_list
           },
@@ -153,12 +153,15 @@ sub BUILD {
         my $cart = $self->cart;
         #Generate session if didn't exists
         $app->session;
-        my $template = $self->cart_view_template || '/cart/cart.tt' ;
+        my $template = $self->cart_view_template || 'cart/cart' ;
         my $page = "";
-        if( -e $self->app->config->{views}.$template ) {
-          $page = $app->template(  $template, {
+        if( -e $self->app->config->{views}.'/'.$template.'.tt' ) {
+          $page = $app->template( $template, {
             ec_cart => $app->session->read('ec_cart'),
-          } );
+          },
+					{
+						layout => 'cart.tt'	
+					} );
         }
         else{
            $page = _cart_view({ ec_cart => $app->session->read('ec_cart') });
@@ -197,12 +200,15 @@ sub BUILD {
       code => sub {
         my $app = shift;
         my $cart = $self->cart;
-        my $template = $self->shipping_view_template || '/cart/shipping.tt';
+        my $template = $self->shipping_view_template || 'shipping';
         my $page = "";
-        if( -e $app->config->{views}.$template ) {
-            $page = $app->template ($template, {
+        if( -e $app->config->{views}.'/cart/'.$template.'.tt' ) {
+            $page = $app->template ( 'cart/'.$template, {
             ec_cart => $app->session->read('ec_cart'),
-          });
+          },
+					{
+						layout => 'cart.tt'
+					});
         }
         else{
           $page = _shipping_view({ ec_cart => $app->session->read('ec_cart') });
@@ -230,12 +236,16 @@ sub BUILD {
       code => sub {
         my $app = shift;
         my $cart = $self->cart;
-        my $template = $self->billing_view_template || '/cart/billing.tt' ;
+        my $template = $self->billing_view_template || 'billing' ;
         my $page = "";
-        if( -e $app->config->{views}.$template ) {
-            $page = $app->template( $template, {
+        if( -e $app->config->{views}.'/cart/'.$template.'.tt' ) {
+            $page = $app->template( 'cart/'.$template, {
             ec_cart => $app->session->read('ec_cart'),
-          });
+          },
+					{
+						layout => 'cart.tt'
+					}
+					);
         }
         else{
           $page = _billing_view({ ec_cart => $app->session->read('ec_cart') });
@@ -264,11 +274,14 @@ sub BUILD {
         my $app = shift;
         my $cart = $self->cart;
         my $page = "";
-        my $template = $self->review_view_template || '/cart/review.tt' ;
-        if( -e $app->config->{views}.$template ) {
-            $page = $app->template($template,{
+        my $template = $self->review_view_template || 'review' ;
+        if( -e $app->config->{views}.'/cart/'.$template.'.tt' ) {
+            $page = $app->template( 'cart/'.$template,{
               ec_cart => $app->session->read('ec_cart'),
-            });
+            },
+						{
+							layout => 'cart.tt'
+						});
         }
         else{
           $page = _review_view( { cart => $cart , ec_cart => $app->session->read('ec_cart') } );
@@ -295,11 +308,17 @@ sub BUILD {
       regexp => '/cart/receipt',
       code => sub {
         my $app = shift;
-        my $template = $self->receipt_view_template || '/cart/receipt.tt' ;
+        my $template = $self->receipt_view_template || 'receipt' ;
         my $page = "";
 				my $ec_cart = $app->session->read('ec_cart');
-        if( -e $app->config->{views}.$template ) {
-            $page = $app->template($template, { cart => $ec_cart } );
+        if( -e $app->config->{views}.'/cart/'.$template.'.tt' ) {
+          $page = $app->template( 'cart/'.$template, 
+					{ 
+	  				cart => $ec_cart 
+		      },
+					{
+						layout => 'cart.tt'
+					});
         }
         else{
           $page = _receipt_view({ ec_cart => $ec_cart });
