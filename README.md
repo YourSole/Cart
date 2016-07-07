@@ -12,69 +12,36 @@ This plugin provides a easy way to manage a shopping cart in dancer2.  All the i
 
 It was designed to be used on new or existing database, providing a lot of hooks in order to fit customizable solutions.
 
-By default, the plugin is going to search default templates on the views directory, if the view doesn't exists, the plugin will render and inline template provided by the plugin.
+By default, the plugin is going to search default templates on the views directory, if the view doesn't exists, the plugin will render and inline templates provided by the plugin.
 
 An script file has been added in order to generate the template views of each stage of a checkout, and the user will be able to adapt it to their needs.
 
+The script is create_cart_views and needs to be run on the root directory of the dancer2 app.  The default views assume that you are using "Template Toolkit" as the template engine, because the default template "Simple" just render scalars.
 
 
 # SYNOPSIS
 
-1.  Create a table as:
-
-         CREATE TABLE ec_cart (
-                 id serial,
-                 name  TEXT NOT NULL,
-                 session TEXT NOT NULL,
-                 status INTEGER NOT NULL default 0,
-                 log TEXT,
-                 PRIMARY KEY(id)
-        );
-
-         CREATE TABLE ec_cart_product (
-                 cart_id INTEGER NOT NULL,
-                 sku  TEXT NOT NULL,
-                 price NUMERIC NOT NULL,
-                 quantity  INTEGER NOT NULL,
-                 place INTEGER NOT NULL,
-                 PRIMARY KEY(cart_id, sku)
-        );
-
-
-2. Generate the DBIC clases:
-
-    A good way to do it is with dbicdump as an example:
-
-    dbicdump -o overwrite_modifications=1 -o db_schema=public App::Schema -o constraint='qr/ec_cart/' "dbi:Pg:dbname=$dbname;host=$host;port=$port; options=$options; tty=$tty", "$username", "$password"
-
-
-3. Configure the plugin in order to set up the tables and main fields.  The mandatory fields are in teh example, and the configuration options are listed below.
-
-        plugins:
-              Cart:
-                    product_name: 'Product'
-                    product_pk: 'sku'
-                    product_price: 'price'
+1. In order to use the plugin, you need to configure at least some products.
+	
+  plugins:
+	  Cart:
+  	  product_list:
+    	  - ec_sku: 'SU01'
+      	  ec_price: 15
+	      - ec_sku: 'SU02'
+  	      ec_price: 20
     
-4. use the library
+2. use the library
 
     On your app.pm add:
 
     use Dancer2::Plugin2::Cart;
 
 
-
 ##Configuration Options: 
 
-    * cart_name:  
-    * cart_product_name
-    * product_name
-    * product_pk
-    * product_price
-    * product_filter
-    * product_order
     * products_view_template
-    * cart_vidw_template
+    * cart_view_template
     * cart_receipt_template
     * cart_checkout_template
     * shipping_view_template
@@ -83,7 +50,6 @@ An script file has been added in order to generate the template views of each st
     * receipt_view_template
     * default_routes
     * excluded_routes 
-
 
 ##Keywords:
 
@@ -99,8 +65,6 @@ An script file has been added in order to generate the template views of each st
     * checkout
     * close_cart
     * adjustments
-
-
 
 ##Hooks:
 
