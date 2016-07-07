@@ -9,7 +9,7 @@ use HTTP::Request::Common;
 use HTTP::Cookies;
 use Data::Dumper;
 
-use TestApp1;
+use t::lib::TestApp1;
 
 my $app = Dancer2->runner->psgi_app;
 is( ref $app, 'CODE', 'Got app' );

@@ -8,7 +8,7 @@ use Dancer2;
 use HTTP::Request::Common;
 use lib File::Spec->catdir( 't', 'lib' );
 
-use TestApp;
+use t::lib::TestApp;
 
 my $app = Dancer2->runner->psgi_app;
 is( ref $app, 'CODE', 'Got app' );

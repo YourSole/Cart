@@ -10,7 +10,7 @@ use HTTP::Cookies;
 
 use lib File::Spec->catdir( 't', 'lib' );
 
-use TestApp;
+use t::lib::TestApp;
 
 t::lib::TestApp::set plugins => {
 };

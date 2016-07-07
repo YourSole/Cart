@@ -9,7 +9,7 @@ use HTTP::Request::Common;
 use File::Temp qw(tempfile);
 use HTTP::Cookies;
 
-use TestApp;
+use t::lib::TestApp;
 t::lib::TestApp::set plugins => {
     'Cart' => {
 			'product_list' => [
