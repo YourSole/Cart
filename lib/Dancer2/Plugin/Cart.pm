@@ -1,10 +1,12 @@
 package Dancer2::Plugin::Cart;
+# ABSTRACT: Cart Plugin for Dancer2 app.
 use strict;
 use warnings;
 use Dancer2::Plugin;
 use Dancer2::Plugin::Cart::InlineViews;
 use JSON;
 our $VERSION = '0.0001';  #Version
+
 
 BEGIN{
   has 'product_list' => (
@@ -584,5 +586,138 @@ sub total {
 }
 
 
+
 1;
 __END__
+
+
+=pod
+
+=head1 NAME
+
+Dancer2::Plugin::Cart - Cart interface for Dancer2 applications
+
+=head1 VERSION
+
+version 0.0001
+
+=head1 SYNOPSIS
+
+    use Dancer2;
+    use Dancer2::Plugin::Cart;
+
+
+=head1 DESCRIPTION
+
+This plugin provides a easy way to manage a shopping cart in dancer2.  All the information and data structure of the plugin will be manage by the session, so a good idea is to use a plugin in order to store the session data in the database.  
+
+It was designed to be used on new or existing database, providing a lot of hooks in order to fit customizable solutions.
+
+By default, the plugin is going to search default templates on the views directory, if the view doesn't exists, the plugin will render and inline templates provided by the plugin.
+
+An script file has been added in order to generate the template views of each stage of a checkout, and the user will be able to adapt it to their needs.
+
+The script is create_cart_views and needs to be run on the root directory of the dancer2 app.  The default views assume that you are using "Template Toolkit" as the template engine, because the default template "Simple" just render scalars.
+
+=encoding utf8
+
+=head1 CONFIGURATION
+  plugins:
+	  Cart:
+  	  product_list:
+    	  - ec_sku: 'SU01'
+      	  ec_price: 15
+	      - ec_sku: 'SU02'
+  	      ec_price: 20
+
+A basic configuration is a product list with ec_sku and ec_price defined.
+    * products_view_template
+    * cart_view_template
+    * cart_receipt_template
+    * cart_checkout_template
+    * shipping_view_template
+    * billing_view_template
+    * review_view_template
+    * receipt_view_template
+    * default_routes
+    * excluded_routes 
+      
+=head1 FUNCTIONS
+
+=head2 products
+
+
+=head2 products
+
+Return the list of products and fill the ec_cart->{products} session variable.
+
+=head2 cart
+
+Return a ec_cart Hashref with the updated info.
+
+=head2 cart_add
+
+Add product to the cart
+
+=head2 cart_add_item
+
+Add an item to the cart
+
+=head2 cart_items
+
+List the cart_items
+
+=head2 clear_cart
+
+Clear session variable
+
+=head2 subtotal
+
+Calculate and return the subtotal (sum the subtotals of each product)
+
+=head2 billing
+
+Load the ec_cart structure and check if there is any error on ec_cart->{billing}->{error}.
+
+In case of error, the user is redirected to the billing route, other wise pass to the 
+
+=head2 shipping
+
+Load the ec_cart structure and check if there is any error on ec_cart->{shipping}->{error}
+
+In case of error, the user is redirected to the shipping route.
+
+=head2 checkout
+
+Load the ec_cart structure check if there is any error on ec_cart->{checkout}->{error};
+
+=head2 close_cart
+
+Add status 1 to the ec_cart structure.
+
+=head2 adjustments
+
+Add defautl adjustments to the ec_cart structure. The default adjustments are:  Discounts, Shipping, Taxes.
+
+=head1 CONTRIBUTORS
+
+=over 4
+
+=item *
+
+Andrew Baerg <andrew@pullingshots.ca>
+
+=back
+
+=head1 AUTHOR
+
+Ruben Amortegui <ruben.amortegui@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2016 by Ruben Amortegui.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
