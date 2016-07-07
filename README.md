@@ -107,12 +107,8 @@ Please use GitHub issue tracker
 YourSole Core Developers
 
 ## DEVELOPERS
-    Ruben Amortegui
 
-# AUTHOR
-
-Ruben Amortegui `<ruben.amortegui@gmail.com>`
-
+	Ruben Amortegui `<ruben.amortegui@gmail.com>`
 
 # COPYRIGHT AND LICENSE
 
