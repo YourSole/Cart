@@ -5,7 +5,7 @@ use warnings;
 use Dancer2::Plugin;
 use Dancer2::Plugin::Cart::InlineViews;
 use JSON;
-our $VERSION = '0.0001';  #Version
+our $VERSION = '0.0002';  #Version
 
 
 BEGIN{
@@ -599,7 +599,7 @@ Dancer2::Plugin::Cart - Cart interface for Dancer2 applications
 
 =head1 VERSION
 
-version 0.0001
+version 0.0002
 
 =head1 SYNOPSIS
 
