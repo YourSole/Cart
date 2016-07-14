@@ -102,13 +102,17 @@ The script is create_cart_views and needs to be run on the root directory of the
 Please use GitHub issue tracker 
 [here](https://github.com/YourSole/Cart).
 
-# AUTHORS
+
+#AUTHORS
+
+## CORE DEVELOPERS
+
+Andrew Baerg
+Ruben Amortegui`
+
+# AUTHOR
 
 YourSole Core Developers
-
-## DEVELOPERS
-
-Ruben Amortegui `<ruben.amortegui@gmail.com>`
 
 # COPYRIGHT AND LICENSE
 

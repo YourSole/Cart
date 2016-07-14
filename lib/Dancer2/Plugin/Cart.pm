@@ -699,13 +699,16 @@ Add status 1 to the ec_cart structure.
 
 Add defautl adjustments to the ec_cart structure. The default adjustments are:  Discounts, Shipping, Taxes.
 
+=head1 AUTHORS
+
+=head2 CORE DEVELOPERS
+
+    Andrew Baerg
+    Ruben Amortegui
+
 =head1 AUTHOR
 
-YourSole Core Developers
-
-=head1 DEVELOPERS
-
-Ruben Amortegui <ruben.amortegui@gmail.com>
+    YourSole Core Developers
 
 =head1 COPYRIGHT AND LICENSE
 
