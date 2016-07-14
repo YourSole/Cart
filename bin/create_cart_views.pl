@@ -123,7 +123,7 @@ sub create_products_view{
           <form method='post' action='cart/add'>
             <input type='hidden' name='ec_sku' value='$open_t product.ec_sku $close_t'>
             <input type='hidden' name='ec_quantity' value='1'>
-            <input type='submit' value = 'Add'>
+            <input type='submit' value = 'Add' class='btn btn-primary'>
           </form>
         </td>
       </tr>
@@ -162,7 +162,7 @@ sub _cart_view {
           <td><form method='post' action='cart/add'>
           <input type='hidden' name='ec_sku' value='$open_t item.ec_sku $close_t'>
           <input type='hidden' name='ec_quantity' value='-1'>
-          <input type='submit' value = '-1'>
+          <input type='submit' value = '-1' class='btn btn-primary'>
           </form></td>";
       }    
       $page .="
@@ -171,7 +171,7 @@ sub _cart_view {
         $page .= "<td><form method='post' action='cart/add'>
             <input type='hidden' name='ec_sku' value='$open_t item.ec_sku $close_t'>
             <input type='hidden' name='ec_quantity' value='1'>
-            <input type='submit' value = '+1'>
+            <input type='submit' value = '+1' class='btn btn-primary'>
             </form></td>";
         }
         $page .="<td>$open_t item.ec_price $close_t </td>
@@ -226,7 +226,7 @@ sub create_shipping_view{
   $open_t END $close_t
   <h2>Shipping info</h2>
   <form method='post' action='shipping'>
-   <p>Email <input type='text' name='email' value='$open_t ec_cart.shipping.form.email $close_t' paceholder='email\@domain.com'><input type='submit' value = 'Continue'></p>
+   <p>Email <input type='text' name='email' value='$open_t ec_cart.shipping.form.email $close_t' paceholder='email\@domain.com'><input type='submit' value = 'Continue' class='btn btn-primary'></p>
   </form>";
   
   $page .= "<p><a href='../cart'> Cart </a></p>";
@@ -246,7 +246,7 @@ sub create_billing_view{
   $open_t END $close_t
   <h2>Billing info</h2>
   <form method='post' action='billing'>
-   <p> Email <input type='text' name='email' value='$open_t ec_cart.billing.form.email $close_t' paceholder='email\@domain.com'><input type='submit' value = 'Continue'> </p>
+   <p> Email <input type='text' name='email' value='$open_t ec_cart.billing.form.email $close_t' paceholder='email\@domain.com'><input type='submit' value = 'Continue' class='btn btn-primary'> </p>
   </form>";
   $page .= "<p><a href='../cart'> Cart </a></p>";
 	$page .= "$open_t END $close_t";
@@ -266,7 +266,7 @@ sub create_review_view{
       <tr><td>Billing - email</td><td>$open_t ec_cart.billing.form.email $close_t</td></tr>
   </table>
   <form method='post' action='checkout'>
-  <input type='submit' value = 'Place Order'>
+  <input type='submit' value = 'Place Order' class='btn btn-primary'>
   </form>";
   $page .= "<p> <a href='../cart'>Cart</a> </p>";
 	$page .= "$open_t END $close_t";
