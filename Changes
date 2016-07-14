@@ -5,3 +5,7 @@ Revision history for Dancer2-Plugin-Cart
 
 0.0002 2016-07-12
         Add script to generate views.
+
+0.0004 2016-07-13
+        Fix test names
+        Fix Dancer2::Plugin::Cart::Plugin::Email;
