@@ -1,4 +1,4 @@
-package Dancer2::Plugin::Cart::Email;
+package Dancer2::Plugin::Cart::Ext::Email;
 # ABSTRACT: Email plugin for Dancer2::Plugin::Cart
 use strict;
 use warnings;
