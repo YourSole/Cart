@@ -226,10 +226,15 @@ sub create_shipping_view{
   $open_t END $close_t
   <h2>Shipping info</h2>
   <form method='post' action='shipping'>
-   <p>Email <input type='text' name='email' value='$open_t ec_cart.shipping.form.email $close_t' paceholder='email\@domain.com'><input type='submit' value = 'Continue' class='btn btn-primary'></p>
+    <fieldset class='form-group'>
+      <label for='email'>Email address</label>
+      <input type='email' name='email' class='form-control' value='$open_t ec_cart.shipping.form.email $close_t' placeholder='email\@domain.com' required >
+      <small class='text-muted'>We'll never share your email with anyone else.</small>
+    </fieldset>
+    <a href='../cart' class='btn btn-primary'>Back</a>
+    <input type='submit' value = 'Continue' class='btn btn-primary'>
   </form>";
   
-  $page .= "<p><a href='../cart'> Cart </a></p>";
 	$page .= "$open_t END $close_t";
   create_view( 'cart/shipping.tt', $page );
 }
@@ -246,9 +251,14 @@ sub create_billing_view{
   $open_t END $close_t
   <h2>Billing info</h2>
   <form method='post' action='billing'>
-   <p> Email <input type='text' name='email' value='$open_t ec_cart.billing.form.email $close_t' paceholder='email\@domain.com'><input type='submit' value = 'Continue' class='btn btn-primary'> </p>
+    <fieldset class='form-group'>
+      <label for='email'>Email address</label>
+      <input type='email' name='email' class='form-control' value='$open_t ec_cart.billing.form.email $close_t' placeholder='email\@domain.com' required >
+      <small class='text-muted'>We'll never share your email with anyone else.</small>
+    </fieldset>
+    <a href='shipping' class='btn btn-primary'>Back</a>
+    <input type='submit' value = 'Continue' class='btn btn-primary'>
   </form>";
-  $page .= "<p><a href='../cart'> Cart </a></p>";
 	$page .= "$open_t END $close_t";
   create_view( 'cart/billing.tt', $page );
 }
@@ -262,13 +272,15 @@ sub create_review_view{
   $page .= _cart_view;
   $page .= "$open_t IF $ec_cart.cart.items.size $close_t";
   $page .= "<table class='table table-bordered'>
-      <tr><td>Shipping - email</td><td>$open_t ec_cart.shipping.form.email $close_t</td></tr>
-      <tr><td>Billing - email</td><td>$open_t ec_cart.billing.form.email $close_t</td></tr>
+      <tr><td>Shipping <a href='shipping' class='btn btn-primary'>edit</a></td><td>$open_t ec_cart.shipping.form.email $close_t</td></tr>
+      <tr><td>Billing <a href='billing' class='btn btn-primary'>edit</a></td><td>$open_t ec_cart.billing.form.email $close_t</td></tr>
   </table>
   <form method='post' action='checkout'>
-  <input type='submit' value = 'Place Order' class='btn btn-primary'>
+  <p>
+    <a href='billing' class='btn btn-primary'>Back</a>
+    <input type='submit' value = 'Place Order' class='btn btn-primary'>
+  </p>
   </form>";
-  $page .= "<p> <a href='../cart'>Cart</a> </p>";
 	$page .= "$open_t END $close_t";
   create_view( 'cart/review.tt', $page );
 }

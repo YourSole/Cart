@@ -132,16 +132,18 @@ sub _shipping_view{
   $page .= "
   <h1>Shipping</h1>";
   $page .= _cart_info({ ec_cart => $ec_cart });
-  $page .= "\n<p><a href='clear'> Clear your cart. </a></p>";
+  $page .= "<p><a href='clear'> Clear your cart. </a></p>";
+  $page .= "<p><a href='../cart'>Cart</a></p>";
   if ( $ec_cart->{shipping}->{error} ){
     foreach my $error ( @{$ec_cart->{shipping}->{error}} ){
       $page .= "<p>".$error."</p>";
     }
   }
   $page .= "
+    
     <p>Shipping info</p>
     <form method='post' action='shipping'>
-     Email <input type='text' name='email' value='".$ec_cart->{shipping}->{form}->{email}."' paceholder='email\@domain.com'>
+     Email <input type='email' name='email' value='".$ec_cart->{shipping}->{form}->{email}."' paceholder='email\@domain.com'>
       <input type='submit' value = 'Continue'>
     </form>";
 }
@@ -156,6 +158,7 @@ sub _billing_view{
   <h1>Billing</h1>";
   $page .= _cart_info({ ec_cart => $ec_cart });
   $page .= "\n<p><a href='clear'> Clear your cart. </a></p>";
+  $page .= "<p><a href='shipping'>Shipping</a></p>";
 
   if ( $ec_cart->{billing}->{error} ){
     foreach my $error ( @{$ec_cart->{billing}->{error}} ){
@@ -165,7 +168,7 @@ sub _billing_view{
   $page .= "
     <p>Billing info</p>
     <form method='post' action='billing'>
-     Email <input type='text' name='email' value='".$ec_cart->{billing}->{form}->{email}."' paceholder='email\@domain.com'>
+     Email <input type='email' name='email' value='".$ec_cart->{billing}->{form}->{email}."' paceholder='email\@domain.com'>
       <input type='submit' value = 'Continue'>
     </form>";
 
