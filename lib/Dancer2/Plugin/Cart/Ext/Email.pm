@@ -2,29 +2,13 @@ package Dancer2::Plugin::Cart::Ext::Email;
 # ABSTRACT: Email plugin for Dancer2::Plugin::Cart
 use strict;
 use warnings;
-use Dancer2;
-use Dancer2::Plugin;
 our $VERSION = '0.0001'; #Version
-BEGIN{
-	has 'sender' => (
-		is => 'ro',
-		from_config => 1,
-		default => sub { '' }
-	);
-}
+use Dancer2;
 
-sub BUILD {
-  my $self = shift;
-	$self->app->add_hook(
-            Dancer2::Core::Hook->new(
-                name => 'plugin.cart.checkout',
-                code => sub {
-									debug(' This is working' );
-									debug(to_dumper( session->read('ec_cart') ));
-							 },
-            )
-        ); 
-}
+hook 'plugin.cart.checkout' => sub {
+  debug(' This is working' );
+  debug(to_dumper( session->read('ec_cart') ));
+};
 
 
 1;
@@ -35,7 +19,7 @@ __END__
 
 =head1 NAME
 
-Dancer2::Plugin::Cart::Plugin::Email
+Dancer2::Plugin::Cart::Ext::Email
 
 =head1 VERSION
 
@@ -45,7 +29,7 @@ version 0.0001
 
 	use Dancer2;
 	use Dancer2::Plugin::Cart;
-	use Dancer2::Plugin::Cart::Plugin::Email;
+	use Dancer2::Plugin::Cart::Ext::Email;
 
 =head1 DESCRIPTION
 
