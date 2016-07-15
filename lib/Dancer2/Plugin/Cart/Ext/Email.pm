@@ -2,7 +2,7 @@ package Dancer2::Plugin::Cart::Ext::Email;
 # ABSTRACT: Email plugin for Dancer2::Plugin::Cart
 use strict;
 use warnings;
-our $VERSION = '0.0001'; #Version
+our $VERSION = '0.0002'; #Version
 use Dancer2;
 
 hook 'plugin.cart.checkout' => sub {
@@ -23,7 +23,7 @@ Dancer2::Plugin::Cart::Ext::Email
 
 =head1 VERSION
 
-version 0.0001
+version 0.0002
 
 =head1 SYNOPSIS
 

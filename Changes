@@ -9,3 +9,6 @@ Revision history for Dancer2-Plugin-Cart
 0.0004 2016-07-13
         Fix test names
         Fix Dancer2::Plugin::Cart::Plugin::Email;
+
+0.0005 2016-07-14
+        Improve UX InlineViews and predefined templates.

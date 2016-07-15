@@ -143,7 +143,7 @@ sub _shipping_view{
     
     <p>Shipping info</p>
     <form method='post' action='shipping'>
-     Email <input type='email' name='email' value='".$ec_cart->{shipping}->{form}->{email}."' paceholder='email\@domain.com'>
+     Email <input type='email' name='email' value='".$ec_cart->{shipping}->{form}->{email}."' paceholder='email\@domain.com' required>
       <input type='submit' value = 'Continue'>
     </form>";
 }
@@ -168,7 +168,7 @@ sub _billing_view{
   $page .= "
     <p>Billing info</p>
     <form method='post' action='billing'>
-     Email <input type='email' name='email' value='".$ec_cart->{billing}->{form}->{email}."' paceholder='email\@domain.com'>
+     Email <input type='email' name='email' value='".$ec_cart->{billing}->{form}->{email}."' paceholder='email\@domain.com' required>
       <input type='submit' value = 'Continue'>
     </form>";
 
