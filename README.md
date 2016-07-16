@@ -1,10 +1,10 @@
 # NAME
 
-Dancer2::Plugin::Cart - Ecommerce Cart Plugin for Dancer2
+Dancer2::Plugin::Cart - ECommerce Cart Plugin for Dancer2
 
-# VERSION 
+# VERSION
 
-Version 0.000001
+Version 0.0006
 
 # DESCRIPTION
 
@@ -53,7 +53,7 @@ template "Simple" just renders scalars.
         use Dancer2::Plugin::Cart;
 
 
-##Configuration Options: 
+## Configuration Options:
 
     * products_view_template
     * cart_view_template
@@ -64,7 +64,7 @@ template "Simple" just renders scalars.
     * review_view_template
     * receipt_view_template
     * default_routes
-    * excluded_routes 
+    * excluded_routes
 
 ##Keywords:
 
@@ -110,24 +110,21 @@ template "Simple" just renders scalars.
     * after_subtotal
     * adjustments
 
-
-
-
 # BUGS
-Please use GitHub issue tracker 
+Please use GitHub issue tracker
 [here](https://github.com/YourSole/Cart/issues).
-
-
-#AUTHORS
-
-## CORE DEVELOPERS
-
-Andrew Baerg
-Ruben Amortegui`
 
 # AUTHOR
 
-YourSole Core Developers
+    YourSole Core Developers
+##  CORE DEVELOPERS
+
+    Andrew Baerg
+    Ruben Amortegui
+
+# CONTRIBUTORS
+
+    Josh Lavin
 
 # COPYRIGHT AND LICENSE
 

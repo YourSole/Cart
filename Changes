@@ -12,3 +12,7 @@ Revision history for Dancer2-Plugin-Cart
 
 0.0005 2016-07-14
         Improve UX InlineViews and predefined templates.
+
+0.0006 2016-07-16
+        Remove extentions from Core Plugin.
+        Fix README.md
