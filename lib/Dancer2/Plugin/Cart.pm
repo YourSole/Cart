@@ -5,7 +5,7 @@ use warnings;
 use Dancer2::Plugin;
 use Dancer2::Plugin::Cart::InlineViews;
 use JSON;
-our $VERSION = '0.0006';  #Version
+our $VERSION = '0.0007';  #Version
 
 
 BEGIN{
@@ -599,7 +599,7 @@ Dancer2::Plugin::Cart - Cart interface for Dancer2 applications
 
 =head1 VERSION
 
-version 0.0006
+version 0.0007
 
 =head1 SYNOPSIS
 
@@ -622,30 +622,31 @@ The script is create_cart_views and needs to be run on the root directory of the
 =encoding utf8
 
 =head1 CONFIGURATION
+
+=item C<environment>
+
     plugins:
 	    Cart:
- 	      product_list:
-          - ec_sku: 'SU01'
-            ec_price: 15
-          - ec_sku: 'SU02'
-            ec_price: 20
+ 	     product_list:
+         - ec_sku: 'SU01'
+           ec_price: 15
+         - ec_sku: 'SU02'
+           ec_price: 20
 
-A basic configuration is a product list with ec_sku and ec_price defined.
-    * products_view_template
-    * cart_view_template
-    * cart_receipt_template
-    * cart_checkout_template
-    * shipping_view_template
-    * billing_view_template
-    * review_view_template
-    * receipt_view_template
-    * default_routes
-    * excluded_routes 
+=item C<Options>
+
+  products_view_template
+  cart_view_template
+  cart_receipt_template
+  cart_checkout_template
+  shipping_view_template
+  billing_view_template
+  review_view_template
+  receipt_view_template
+  default_routes
+  excluded_routes 
       
 =head1 FUNCTIONS
-
-=head2 products
-
 
 =head2 products
 

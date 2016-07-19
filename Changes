@@ -16,3 +16,6 @@ Revision history for Dancer2-Plugin-Cart
 0.0006 2016-07-16
         Remove extentions from Core Plugin.
         Fix README.md
+
+0.0007 2016-07-18
+        Update pod on lib/Dancer2/Plugin/Cart.pm
