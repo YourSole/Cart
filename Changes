@@ -22,3 +22,6 @@ Revision history for Dancer2-Plugin-Cart
 
 0.0008 2016-07-19
         Fix pod on lib/Dancer2/Plugin/Cart.pm
+
+0.0009 2016-07-19
+        Add hooks info to pod on lib/Dancer2/Plugin/Cart.pm

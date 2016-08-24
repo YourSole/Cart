@@ -5,7 +5,7 @@ use warnings;
 use Dancer2::Plugin;
 use Dancer2::Plugin::Cart::InlineViews;
 use JSON;
-our $VERSION = '0.0008';  #Version
+our $VERSION = '0.0009';  #Version
 
 
 BEGIN{
@@ -703,6 +703,66 @@ Add status 1 to the ec_cart structure.
 =head2 adjustments
 
 Add defautl adjustments to the ec_cart structure. The default adjustments are:  Discounts, Shipping, Taxes.
+
+=head1 HOOKS
+
+Hooks are called before|after|as a function.
+
+=head2 before_cart
+
+=head2 after_cart
+
+=head2 validate_cart_add_params
+
+=head2 before_cart_add
+
+=head2 after_cart_add
+
+=head2 before_cart_add_item
+
+=head2 after_cart_add_item
+
+=head2 validate_shipping_params
+
+=head2 before_shipping
+
+=head2 after_shipping
+
+=head2 validate_billing_params
+
+=head2 before_billing
+
+=head2 after_billing
+
+=head2 validate_checkout_params
+
+=head2 before_checkout
+
+=head2 checkout
+
+To implement the checkout step.
+
+=head2 after_checkout
+
+=head2 before_close_cart
+
+=head2 after_close_cart
+
+=head2 before_clear_cart
+
+=head2 after_clear_cart
+
+=head2 before_item_subtotal
+
+=head2 after_item_subtotal
+
+=head2 before_subtotal
+
+=head2 after_subtotal
+
+=head2 adjustments
+
+Add adjustments (This hook is called is called by cart function).
 
 =head1 AUTHORS
 
