@@ -192,11 +192,15 @@ sub _cart_view {
     </table>
     $open_t FOREACH error = $ec_cart.add.error $close_t
       <p> $open_t error $close_t </p>
-    $open_t END $close_t
-    $open_t IF $editable $close_t
-     <p><a href='cart/clear'> Clear your cart. </a></p>
-    $open_t END $close_t
-  $open_t ELSE $close_t
+    $open_t END $close_t";
+
+    if ( $editable ){
+      $page .= "$open_t IF $editable $close_t
+       <p><a href='cart/clear'> Clear your cart. </a></p>
+      $open_t END $close_t";
+    }
+
+  $page .= "$open_t ELSE $close_t
     <p>Your cart is empty</p>
   $open_t END $close_t";
 
