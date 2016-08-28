@@ -135,14 +135,14 @@ sub BUILD {
         my $template = $self->products_view_template || 'products' ;
         if( -e $self->app->config->{views}.'/'.$template.'.tt' ) {
           $app->template( $template, {
-            product_list => $self->product_list
+            product_list => $self->products
           },
 					{
 						layout => 'cart.tt'
 					});
         }
         else{
-          _products_view({ product_list => $self->product_list });
+          _products_view({ product_list => $self->products });
         }
       },
     )if !grep { $_ eq 'products' }@{$excluded_routes};
@@ -338,10 +338,11 @@ sub products {
   my $app = $self->app;
 	my $ec_cart = $self->cart;
 	if ( $self->product_list ){
-		 $ec_cart->{products} = $self->product_list;
+    $ec_cart->{products} = $self->product_list;
+    $app->session->write( 'ec_cart', $ec_cart );
 	}
- 	$app->session->write( 'ec_cart', $ec_cart );
   $app->execute_hook('plugin.cart.products');
+  $ec_cart = $self->cart;
 	return $ec_cart->{products};
 }
 
