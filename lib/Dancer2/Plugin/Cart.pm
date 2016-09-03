@@ -5,7 +5,7 @@ use warnings;
 use Dancer2::Plugin;
 use Dancer2::Plugin::Cart::InlineViews;
 use JSON;
-our $VERSION = '0.0009';  #Version
+our $VERSION = '0.0011';  #Version
 
 
 BEGIN{
@@ -600,7 +600,7 @@ Dancer2::Plugin::Cart - Cart interface for Dancer2 applications
 
 =head1 VERSION
 
-version 0.0008
+version 0.0011
 
 =head1 SYNOPSIS
 
@@ -650,6 +650,53 @@ The script is create_cart_views and needs to be run on the root directory of the
     excluded_routes 
 
 =back
+
+=head1 ROUTES
+
+=head2 get /products
+
+  List of products
+
+=head2 get /cart
+
+  Cart info
+
+=head2 post /cart/add
+
+  To add a product to the cart
+
+=head2 get /cart/clear
+
+  To reset the cart
+
+=head2 get /cart/shipping
+
+  To show shipping form
+
+=head2 post /cart/shipping
+
+  To store data on session variable
+
+=head2 get /cart/billing
+
+  To show billing form
+
+=head2 post /cart/billing
+
+  To store data on session variable
+
+=head2 get /cart/review
+
+  To show a summary of the cart
+
+=head2 post /cart/checkout
+
+  To place orders
+
+=head2 get /cart/receipt
+
+  To show the results of placing an order
+
 
 =head1 FUNCTIONS
 
