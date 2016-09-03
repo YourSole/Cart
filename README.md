@@ -66,7 +66,31 @@ template "Simple" just renders scalars.
     * default_routes
     * excluded_routes
 
-##Keywords:
+## Routes
+    * get /products
+      List of products
+    * get /cart
+      Cart info
+    * post /cart/add
+      To add a product to the cart
+    * get /cart/clear
+      To reset the cart
+    * get /cart/shipping
+      To show shipping form
+    * post /cart/shipping
+      To store data on session variable
+    * get /cart/billing
+      To show billing form
+    * post /cart/billing
+      To store data on session variable
+    * get /cart/review
+      To show a summary of the cart
+    * post /cart/checkout
+      To place orders
+    * get /cart/receipt
+      To show the results of placing an order
+      
+## Keywords:
 
     * products
     * cart
