@@ -32,3 +32,6 @@ Revision history for Dancer2-Plugin-Cart
 
 0.0011 2016-09-02
         Add documentation. (routes provided by the plugin).
+
+0.0012 2016-09-06
+        Fix Inline receipt views.  Update docs.
