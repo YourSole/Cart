@@ -203,7 +203,7 @@ sub _receipt_view{
   $page .= "
   <p>Checkout has been successful!!</p>
   <h1>Receipt #: ".$ec_cart->{cart}->{session}." </h1>";
-  $page .= _cart_info({ ec_cart => $cart });
+  $page .= _cart_info({ ec_cart => $ec_cart });
   $page .= "<h2>Log Info</h2>
   <table>
     <tr><td>Session :</td><td>".$ec_cart->{cart}->{session}."</td></tr>
