@@ -26,8 +26,7 @@ their needs.
 
 The script is `create_cart_views` and needs to be run on the root
 directory of the Dancer2 app. The default views assume that you are
-using "Template Toolkit" as the template engine, because the default
-template "Simple" just renders scalars.
+using "Template Toolkit" as the template engine.
 
 
 # SYNOPSIS

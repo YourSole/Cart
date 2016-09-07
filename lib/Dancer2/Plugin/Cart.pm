@@ -618,7 +618,7 @@ By default, the plugin is going to search default templates on the views directo
 
 An script file has been added in order to generate the template views of each stage of a checkout, and the user will be able to adapt it to their needs.
 
-The script is create_cart_views and needs to be run on the root directory of the dancer2 app.  The default views assume that you are using "Template Toolkit" as the template engine, because the default template "Simple" just render scalars.
+The script is create_cart_views and needs to be run on the root directory of the dancer2 app.  The default views assume that you are using "Template Toolkit" as the template engine.
 
 =encoding utf8
 
