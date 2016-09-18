@@ -367,8 +367,8 @@ sub cart_add_item {
 	
   foreach my $product_item ( @{$self->products} ){
 		if( $product_item->{ec_sku} eq $product->{ec_sku} ){
-			$product->{ec_price} = $product_item->{ec_price} * $product->{ec_quantity};
-			$product->{ec_subtotal} = $product->{ec_price};
+			$product->{ec_price} = $product_item->{ec_price};
+			$product->{ec_subtotal} = $product->{ec_quantity} * $product->{ec_price};
 		}
 	}
 	push @{$ec_cart->{cart}->{items}}, $product;
