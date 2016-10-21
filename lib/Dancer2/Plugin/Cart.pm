@@ -5,7 +5,7 @@ use warnings;
 use Dancer2::Plugin;
 use Dancer2::Plugin::Cart::InlineViews;
 use JSON;
-our $VERSION = '0.0012';  #Version
+our $VERSION = '0.0013';  #Version
 
 
 BEGIN{
@@ -286,7 +286,7 @@ sub BUILD {
 						});
         }
         else{
-          $page = _review_view( { cart => $cart , ec_cart => $app->session->read('ec_cart') } );
+          $page = _review_view( { ec_cart => $app->session->read('ec_cart') } );
         }
         my $ec_cart = $app->session->read('ec_cart');
         delete $ec_cart->{checkout}->{error} if $ec_cart->{checkout}->{error};
@@ -316,7 +316,7 @@ sub BUILD {
         if( -e $app->config->{views}.'/cart/'.$template.'.tt' ) {
           $page = $app->template( 'cart/'.$template, 
 					{ 
-	  				cart => $ec_cart 
+	  				ec_cart => $ec_cart 
 		      },
 					{
 						layout => 'cart.tt'
@@ -752,7 +752,7 @@ Add status 1 to the ec_cart structure.
 
 =head2 adjustments
 
-Add defautl adjustments to the ec_cart structure. The default adjustments are:  Discounts, Shipping, Taxes.
+Add default adjustments to the ec_cart structure. The default adjustments are:  Discounts, Shipping, Taxes.
 
 =head1 HOOKS
 

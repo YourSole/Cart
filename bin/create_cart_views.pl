@@ -291,9 +291,9 @@ sub create_review_view{
 
 sub create_receipt_view{
   my ($params) = @_;
-  my $ec_cart = $params->{ec_cart} || 'cart';
+  my $ec_cart = $params->{ec_cart} || 'ec_cart';
 	my $page .= '<h1>Receipt</h1>';
-  $page .= _cart_view({ ec_cart => 'cart'});
+  $page .= _cart_view;
   $page .= "$open_t IF $ec_cart.cart.items.size $close_t";
   $page .="
   <p>Checkout has been successful!!</p>

@@ -35,3 +35,9 @@ Revision history for Dancer2-Plugin-Cart
 
 0.0012 2016-09-06
         Fix Inline receipt views.  Update docs.
+
+0.0013 2016-10-20
+        Fix typos, Fix review route parametter.
+        Fix ec_subtotal per product.
+        Add product info into the cart after add a product.
+        Fix receipt view template.

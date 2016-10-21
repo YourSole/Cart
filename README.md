@@ -4,7 +4,7 @@ Dancer2::Plugin::Cart - ECommerce Cart Plugin for Dancer2
 
 # VERSION
 
-Version 0.0012
+Version 0.0013
 
 # DESCRIPTION
 
@@ -132,6 +132,57 @@ using "Template Toolkit" as the template engine.
     * before_subtotal
     * after_subtotal
     * adjustments
+
+
+## Sesison structure:
+```
+ec_cart => {
+  products => [
+    {
+      ec_sku => 'SU01',
+      ec_price => 10
+    }
+  ],
+  cart => {
+    items => [
+      {
+        ec_sku => 'SU01',
+        ec_price => 10,
+        ec_quantity => 1.
+        ec_subtotal => 10
+      }
+    ],
+    adjustments => [
+                       {
+                         value => 0,
+                         description => 'Discounts'
+                       },
+                       {
+                         description => 'Shipping',
+                         value => 0
+                       },
+                       {
+                         description => 'Taxes',
+                         value => 0
+                       }
+                     ],
+    subtotal => 10,
+    total => 10,
+    quantity => 1,
+    
+  },
+  shipping => {
+    form => {
+      email => 'email@domain.com'
+    }
+  },
+  billing => {
+    form => {
+      email => 'email@domain.com'
+    }
+  }
+}
+```
 
 # BUGS
 Please use GitHub issue tracker
