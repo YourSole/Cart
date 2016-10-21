@@ -134,7 +134,7 @@ using "Template Toolkit" as the template engine.
     * adjustments
 
 
-## Sesison structure:
+## Session structure:
 ```
 ec_cart => {
   products => [
