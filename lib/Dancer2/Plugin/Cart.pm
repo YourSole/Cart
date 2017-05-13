@@ -96,8 +96,6 @@ BEGIN{
     validate_cart_add_params
     before_cart_add
     after_cart_add
-    before_cart_add_item
-    after_cart_add_item
     validate_shipping_params
     before_shipping
     after_shipping
@@ -450,14 +448,11 @@ sub cart_add {
       $self->app->redirect( $app->request->referer || $app->request->uri  );
     }
     else{
-      $app->execute_hook( 'plugin.cart.before_cart_add_item' );
       $product = $self->cart_add_item({
           ec_sku => $ec_cart->{add}->{form}->{'ec_sku'},
           ec_quantity => $ec_cart->{add}->{form}->{'ec_quantity'},
         }
       );
-      $app->execute_hook( 'plugin.cart.after_cart_add_item' );
-
       #Cart operations after adding product to the cart
       $app->execute_hook( 'plugin.cart.after_cart_add' );
       $ec_cart = $app->session->read('ec_cart');
@@ -767,10 +762,6 @@ Hooks are called before|after|as a function.
 =head2 before_cart_add
 
 =head2 after_cart_add
-
-=head2 before_cart_add_item
-
-=head2 after_cart_add_item
 
 =head2 validate_shipping_params
 
