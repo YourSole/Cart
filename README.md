@@ -61,13 +61,13 @@ using "Template Toolkit" as the template engine.
     * cart_receipt_template
         * Define a template to use to show receipts 
     * shipping_view_template
-        * Define a template to use to show shipping form 
+        * Define a template to use to show shipping form
     * billing_view_template
-        * Define a template to use to show billing form 
+        * Define a template to use to show billing form
     * review_view_template
-        * Define a template to use to show review page 
+        * Define a template to use to show review page
     * receipt_view_template
-        * Define a template to use to show receipt page 
+        * Define a template to use to show receipt page
     * default_routes
         * default 1, to exclude all routes, set to 0
     * excluded_routes
@@ -99,20 +99,44 @@ using "Template Toolkit" as the template engine.
 ## Keywords:
 
     * products
+        * Returns products defined on the structure session('ec_cart')->{products}
     * cart
+        * Returns the cart structure.
+        * Refers: session('ec_cart')->{cart}
+        * Use: subtotal, quantity, and total keywords
+        * Hooks: before_cart, after_cart
     * cart_add
+        * Refers: session('ec_cart')->{add}
+        * Hooks: validate_cart_add_params, before_cart_add, after_cart_add
     * cart_add_item
-    * cart_items
+        * Check if the product exists, and add/sub the quantity.
+        * Calculate ec_subtotal
+        * Return product added.
     * clear_cart
+        Delete ec_cart session variable
+        * Hooks: before_clear_cart, after_clear_cart
     * subtotal
+        * Calculate subtotal of the cart
+        * Hooks: before_subtotal, after_subtotal
     * quantity
-    * billing
+        * Calculate total items on the cart
+        * Hooks: before_quantity, after_quantity
     * shipping
+        * Process shipping form and check errors on session('ec_cart')->{shipping}->{form}
+        * Hooks: validate_shipping_params, before_shipping, after_shipping
+    * billing
+        * Process billing form and check errors on session('ec_cart')->{billing}->{form}
+        * Hooks: validate_billing_params, before_billing, after_billing
     * checkout
+        * Hooks: validate_checkout_params, checkout
     * close_cart
+        * Set status 1 to session('ec_cart')->{cart}->{status}
+        * Hooks: before_close_cart, after_close_cart 
     * adjustments
+        * Set default adjustments
+        * Hooks: adjustments
 
-##Hooks:
+## Hooks:
 
     * before_cart
     * after_cart
