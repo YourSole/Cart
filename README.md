@@ -55,16 +55,23 @@ using "Template Toolkit" as the template engine.
 ## Configuration Options:
 
     * products_view_template
+        * Define a template to use to show the products 
     * cart_view_template
+        * Define a template to use to show cart info 
     * cart_receipt_template
-    * cart_checkout_template
+        * Define a template to use to show receipts 
     * shipping_view_template
+        * Define a template to use to show shipping form 
     * billing_view_template
+        * Define a template to use to show billing form 
     * review_view_template
+        * Define a template to use to show review page 
     * receipt_view_template
+        * Define a template to use to show receipt page 
     * default_routes
+        * default 1, to exclude all routes, set to 0
     * excluded_routes
-
+        * Array defining the routes to be excluded.
 ## Routes
     * get /products
       List of products
@@ -170,7 +177,6 @@ ec_cart => {
     subtotal => 10,
     total => 10,
     quantity => 1,
-    
   },
   shipping => {
     form => {

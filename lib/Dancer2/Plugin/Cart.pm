@@ -33,12 +33,6 @@ BEGIN{
     default => sub {}
   );
 
-  has 'cart_checkout_template' => (
-    is => 'ro',
-    from_config => 'views.checkout',
-    default => sub {}
-  );
-
   has 'shipping_view_template' => (
     is => 'ro',
     from_config => 'views.shipping',
@@ -655,15 +649,23 @@ The script is create_cart_views and needs to be run on the root directory of the
 =item C<Options>
 
     products_view_template
+      - Define a template to use to show the products 
     cart_view_template
+      - Define a template to use to show cart info 
     cart_receipt_template
-    cart_checkout_template
+      - Define a template to use to show receipts 
     shipping_view_template
+      - Define a template to use to show shipping form 
     billing_view_template
+      - Define a template to use to show billing form 
     review_view_template
+      - Define a template to use to show review page 
     receipt_view_template
+      - Define a template to use to show receipt page 
     default_routes
-    excluded_routes 
+      - default 1, to exclude all routes, set to 0
+    excluded_routes
+      - Array defining the routes to be excluded.
 
 =back
 
