@@ -76,17 +76,18 @@ BEGIN{
   );
 
   plugin_keywords qw/ 
-    products
+    adjustments
+    billing
     cart
     cart_add
     cart_add_item
-    clear_cart
-    subtotal
-    billing
-    shipping
     checkout
+    clear_cart
     close_cart
-    adjustments
+    products
+    quantity
+    subtotal
+    shipping
   /;
 
   plugin_hooks qw/
@@ -112,6 +113,8 @@ BEGIN{
     after_clear_cart
     before_subtotal
     after_subtotal
+    before_quantity
+    after_quantity
     adjustments
   /;
 }
@@ -393,6 +396,22 @@ sub cart {
   return $ec_cart;
 };
 
+sub quantity {
+  my ($self, $params) = @_;
+  my $app = $self->app;
+
+  $self->execute_hook ('plugin.cart.before_quantity');
+  my $ec_cart = $app->session->read('ec_cart');
+  my $quantity = 0;
+  foreach my $item_quantity ( @{ $ec_cart->{cart}->{items} } ){
+    $quantity += $item_quantity->{ec_quantity} if $item_quantity->{ec_quantity};
+  }
+  $ec_cart->{cart}->{quantity} = $quantity;
+  $app->session->write('ec_cart',$ec_cart);
+  $self->execute_hook ('plugin.cart.after_quantity');
+  $ec_cart = $app->session->read('ec_cart');
+  $ec_cart->{cart}->{quantity};
+}
 
 sub subtotal{
   my ($self, $params) = @_;
@@ -723,7 +742,11 @@ Clear session variable
 
 =head2 subtotal
 
-Calculate and return the subtotal (sum the subtotals of each product)
+Calculate and return the subtotal (sum of ec_subtotal of each product)
+
+=head2 quantity
+
+Calcualte and return the quantity (sum of ec_quantity of each product)
 
 =head2 billing
 
@@ -793,13 +816,13 @@ To implement the checkout step.
 
 =head2 after_clear_cart
 
-=head2 before_item_subtotal
-
-=head2 after_item_subtotal
-
 =head2 before_subtotal
 
 =head2 after_subtotal
+
+=head2 before_quantity
+
+=head2 after_quantity
 
 =head2 adjustments
 

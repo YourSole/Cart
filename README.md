@@ -98,6 +98,7 @@ using "Template Toolkit" as the template engine.
     * cart_items
     * clear_cart
     * subtotal
+    * quantity
     * billing
     * shipping
     * checkout
@@ -127,10 +128,10 @@ using "Template Toolkit" as the template engine.
     * after_close_cart
     * before_clear_cart
     * after_clear_cart
-    * before_item_subtotal
-    * after_item_subtotal
     * before_subtotal
     * after_subtotal
+    * before_quantity
+    * after_quantity
     * adjustments
 
 
