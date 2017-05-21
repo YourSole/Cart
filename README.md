@@ -106,7 +106,8 @@ using "Template Toolkit" as the template engine.
         * Use: subtotal, quantity, and total keywords
         * Hooks: before_cart, after_cart
     * cart_add
-        * Refers: session('ec_cart')->{add}
+        * Process cart_add form and check errors on session('ec_cart')->{add}->{error}
+        * Delete session('ec_cart')->{add} after success. 
         * Hooks: validate_cart_add_params, before_cart_add, after_cart_add
     * cart_add_item
         * Check if the product exists, and add/sub the quantity.

@@ -736,6 +736,10 @@ Call hooks: before_cart, after_cart
 
 Add product to the cart
 
+Process cart_add form and check errors on session('ec_cart')->{add}->{error}
+
+Delete session('ec_cart')->{add} after success 
+
 Call hooks: validate_cart_add_params, before_cart_add, after_cart_add
 
 =head2 cart_add_item
