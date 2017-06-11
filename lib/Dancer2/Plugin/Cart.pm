@@ -526,16 +526,17 @@ sub billing{
 sub checkout{
   my $self = shift;
   my $app = $self->app;
-
   my $params = ($app->request->params);
+  my $ec_cart = $app->session->read( 'ec_cart' );
+  $ec_cart->{checkout}->{form} = $params;
+  $app->session->write( 'ec_cart', $ec_cart );
   $app->execute_hook( 'plugin.cart.validate_checkout_params' );
-  my $ec_cart = $app->session->read('ec_cart');
-
+  $ec_cart = $app->session->read('ec_cart');
   if ( $ec_cart->{checkout}->{error} ){
     $app->redirect( $app->request->referer || $app->request->uri  );
   }
   else{
-    $app->execute_hook( 'plugin.cart.checkout' ); 
+    $app->execute_hook( 'plugin.cart.checkout' );
     $ec_cart = $app->session->read('ec_cart');
     if ( $ec_cart->{checkout}->{error} ){
       $app->redirect( $app->request->referer || $app->request->uri );
